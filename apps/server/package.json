@@ -1,0 +1,16 @@
+{
+  "name": "@app/server",
+  "private": true,
+  "dependencies": {
+    "@pkg/core": "workspace:*",
+    "@pkg/shared": "workspace:*"
+  },
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

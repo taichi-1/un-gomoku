@@ -1,0 +1,30 @@
+{
+  "name": "un-gomoku",
+  "module": "index.ts",
+  "scripts": {
+    "test": "bun test",
+    "test:shared": "bun test packages/shared",
+    "test:core": "bun test packages/core",
+    "test:server": "bun test apps/server",
+    "test:web": "bun test apps/web",
+    "lint": "bunx biome check .",
+    "lint:fix": "bunx biome check --write .",
+    "format": "bunx biome format --write .",
+    "typecheck": "bunx tsc --noEmit",
+    "dev:server": "bun --hot apps/server/index.ts",
+    "dev:web": "bun --hot apps/web/index.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.13",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
