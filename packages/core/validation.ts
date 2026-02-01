@@ -1,4 +1,4 @@
-import { BOARD_SIZE } from "@pkg/shared/constants";
+import { BOARD_SIZE, MAX_CANDIDATES } from "@pkg/shared/constants";
 import type { BoardState, Coordinate } from "@pkg/shared/schemas";
 
 /**
@@ -39,4 +39,34 @@ export function isValidCandidate(
   coord: Coordinate,
 ): boolean {
   return isInBounds(coord) && isEmpty(board, coord);
+}
+
+export type CandidateValidationError =
+  | "invalid_candidate_count"
+  | "invalid_candidate_position";
+
+export type CandidateValidationResult =
+  | { ok: true }
+  | { ok: false; error: CandidateValidationError };
+
+/**
+ * Validates the candidate list for a turn against count and board positions.
+ *
+ * @param board - The current board state
+ * @param candidates - Candidate coordinates submitted by the player
+ * @returns Validation result with error kind when invalid
+ */
+export function validateCandidates(
+  board: BoardState,
+  candidates: Coordinate[],
+): CandidateValidationResult {
+  if (candidates.length < 1 || candidates.length > MAX_CANDIDATES) {
+    return { ok: false, error: "invalid_candidate_count" };
+  }
+  for (const coord of candidates) {
+    if (!isValidCandidate(board, coord)) {
+      return { ok: false, error: "invalid_candidate_position" };
+    }
+  }
+  return { ok: true };
 }

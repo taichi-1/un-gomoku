@@ -1,17 +1,11 @@
-import { placeStone } from "@pkg/core/board";
-import { getNextPlayer, isBoardFull } from "@pkg/core/game-state";
-import { isValidCandidate } from "@pkg/core/validation";
-import { checkWinAt } from "@pkg/core/win-detection";
+import { resolveTurn } from "@pkg/core/turn";
+import { validateCandidates } from "@pkg/core/validation";
 import { MAX_CANDIDATES } from "@pkg/shared/constants";
 import { WS_EVENTS } from "@pkg/shared/events";
+import type { RandomFn } from "@pkg/shared/random";
 import type { Coordinate, PlayerId } from "@pkg/shared/schemas";
 import type { Room } from "../types";
-import {
-  broadcastToRoom,
-  calculateSuccess,
-  type RandomFn,
-  selectRandomCandidate,
-} from "../utils";
+import { broadcastToRoom } from "../utils";
 
 export interface ProcessTurnError {
   kind:
@@ -59,19 +53,18 @@ export function validateTurnContext(
       message: "Not your turn",
     };
   }
-  if (candidates.length < 1 || candidates.length > MAX_CANDIDATES) {
-    return {
-      kind: "invalid_candidate_count",
-      message: `Must select 1-${MAX_CANDIDATES} candidates`,
-    };
-  }
-  for (const coord of candidates) {
-    if (!isValidCandidate(room.state.board, coord)) {
+  const candidateValidation = validateCandidates(room.state.board, candidates);
+  if (!candidateValidation.ok) {
+    if (candidateValidation.error === "invalid_candidate_count") {
       return {
-        kind: "invalid_candidate_position",
-        message: "Invalid candidate position",
+        kind: "invalid_candidate_count",
+        message: `Must select 1-${MAX_CANDIDATES} candidates`,
       };
     }
+    return {
+      kind: "invalid_candidate_position",
+      message: "Invalid candidate position",
+    };
   }
   return { room, playerId, candidates };
 }
@@ -81,74 +74,16 @@ export function processTurn(
   random: RandomFn = Math.random,
 ): void {
   const { room, playerId, candidates } = ctx;
-  const success = calculateSuccess(candidates.length, random);
-
-  if (success) {
-    const placedPosition = selectRandomCandidate(candidates, random);
-    room.state.board = placeStone(room.state.board, placedPosition, playerId);
-
-    if (checkWinAt(room.state.board, placedPosition, playerId)) {
-      room.state.phase = "finished";
-      room.state.winner = playerId;
-      broadcastToRoom(room, {
-        event: WS_EVENTS.GAME_TURN_RESULT,
-        result: {
-          success: true,
-          placedPosition,
-          candidates,
-          player: playerId,
-          gameOver: true,
-          winner: playerId,
-        },
-        state: room.state,
-      });
-      return;
-    }
-
-    if (isBoardFull(room.state.board)) {
-      room.state.phase = "finished";
-      room.state.isDraw = true;
-      broadcastToRoom(room, {
-        event: WS_EVENTS.GAME_TURN_RESULT,
-        result: {
-          success: true,
-          placedPosition,
-          candidates,
-          player: playerId,
-          gameOver: true,
-          winner: null,
-        },
-        state: room.state,
-      });
-      return;
-    }
-
-    room.state.currentPlayer = getNextPlayer(playerId);
-    broadcastToRoom(room, {
-      event: WS_EVENTS.GAME_TURN_RESULT,
-      result: {
-        success: true,
-        placedPosition,
-        candidates,
-        player: playerId,
-        gameOver: false,
-        winner: null,
-      },
-      state: room.state,
-    });
-  } else {
-    room.state.currentPlayer = getNextPlayer(playerId);
-    broadcastToRoom(room, {
-      event: WS_EVENTS.GAME_TURN_RESULT,
-      result: {
-        success: false,
-        placedPosition: null,
-        candidates,
-        player: playerId,
-        gameOver: false,
-        winner: null,
-      },
-      state: room.state,
-    });
-  }
+  const { nextState, result } = resolveTurn(
+    room.state,
+    playerId,
+    candidates,
+    random,
+  );
+  room.state = nextState;
+  broadcastToRoom(room, {
+    event: WS_EVENTS.GAME_TURN_RESULT,
+    result,
+    state: room.state,
+  });
 }

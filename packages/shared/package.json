@@ -5,6 +5,7 @@
   "exports": {
     "./constants": "./constants.ts",
     "./events": "./events.ts",
+    "./random": "./random.ts",
     "./schemas": "./schemas/index.ts"
   },
   "devDependencies": {

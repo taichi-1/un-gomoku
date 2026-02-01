@@ -5,6 +5,7 @@
   "exports": {
     "./board": "./board.ts",
     "./game-state": "./game-state.ts",
+    "./turn": "./turn.ts",
     "./validation": "./validation.ts",
     "./win-detection": "./win-detection.ts"
   },

@@ -1,5 +1,5 @@
-import { SUCCESS_PROBABILITY } from "@pkg/shared/constants";
-import type { Coordinate } from "@pkg/shared/schemas";
+import { SUCCESS_PROBABILITY } from "./constants";
+import type { Coordinate } from "./schemas";
 
 /** Random function returning [0, 1). Defaults to Math.random. */
 export type RandomFn = () => number;

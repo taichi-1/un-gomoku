@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { BOARD_SIZE } from "@pkg/shared/constants";
 import { createEmptyBoard } from "./board";
-import { isEmpty, isInBounds, isValidCandidate } from "./validation";
+import {
+  isEmpty,
+  isInBounds,
+  isValidCandidate,
+  validateCandidates,
+} from "./validation";
 
 describe("isInBounds", () => {
   test("should return true for valid coordinates", () => {
@@ -48,5 +53,30 @@ describe("isValidCandidate", () => {
     const row = board[7];
     if (row) row[7] = "player1";
     expect(isValidCandidate(board, { x: 7, y: 7 })).toBe(false);
+  });
+});
+
+describe("validateCandidates", () => {
+  test("returns error for invalid candidate count", () => {
+    const board = createEmptyBoard();
+    expect(validateCandidates(board, [])).toEqual({
+      ok: false,
+      error: "invalid_candidate_count",
+    });
+  });
+
+  test("returns error for invalid candidate positions", () => {
+    const board = createEmptyBoard();
+    const row = board[0];
+    if (row) row[0] = "player1";
+    expect(validateCandidates(board, [{ x: 0, y: 0 }])).toEqual({
+      ok: false,
+      error: "invalid_candidate_position",
+    });
+  });
+
+  test("returns ok for valid candidates", () => {
+    const board = createEmptyBoard();
+    expect(validateCandidates(board, [{ x: 7, y: 7 }])).toEqual({ ok: true });
   });
 });
