@@ -2,6 +2,7 @@ import { WS_EVENTS } from "@pkg/shared/events";
 import { parseClientMessage } from "@pkg/shared/schemas";
 import type { ServerWebSocket } from "bun";
 import { handleDisconnect, routeMessage } from "./handlers";
+import { startRoomCleanup } from "./services";
 import type { WebSocketData } from "./types";
 import { sendMessage } from "./utils";
 
@@ -42,6 +43,7 @@ export function handleWebSocketMessage(
 }
 
 export function startServer(port = 3000) {
+  startRoomCleanup();
   return Bun.serve<WebSocketData>({
     port,
     fetch(req, server) {
@@ -52,6 +54,7 @@ export function startServer(port = 3000) {
           data: {
             roomId: null,
             playerId: null,
+            playerToken: null,
           },
         });
         if (upgraded) {

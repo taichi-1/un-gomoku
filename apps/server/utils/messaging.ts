@@ -11,7 +11,20 @@ export function sendMessage(
 
 export function broadcastToRoom(room: Room, message: ServerMessage): void {
   const data = JSON.stringify(message);
-  for (const playerWs of room.players.keys()) {
+  for (const playerWs of room.players.values()) {
+    playerWs.send(data);
+  }
+}
+
+export function broadcastToRoomExcept(
+  room: Room,
+  excludedPlayerId: WebSocketData["playerId"],
+  message: ServerMessage,
+): void {
+  if (!excludedPlayerId) return;
+  const data = JSON.stringify(message);
+  for (const [playerId, playerWs] of room.players.entries()) {
+    if (playerId === excludedPlayerId) continue;
     playerWs.send(data);
   }
 }

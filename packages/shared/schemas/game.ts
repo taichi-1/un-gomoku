@@ -8,15 +8,6 @@ import {
 
 // ===== Game State Schemas =====
 
-/** Schema for game state data transfer object */
-export const GameStateDTOSchema = v.object({
-  board: BoardStateSchema,
-  currentPlayer: PlayerIdSchema,
-  phase: GamePhaseSchema,
-  winner: v.nullable(PlayerIdSchema),
-  isDraw: v.boolean(),
-});
-
 /** Schema for turn result data transfer object */
 export const TurnResultDTOSchema = v.object({
   success: v.boolean(),
@@ -25,6 +16,16 @@ export const TurnResultDTOSchema = v.object({
   player: PlayerIdSchema,
   gameOver: v.boolean(),
   winner: v.nullable(PlayerIdSchema),
+});
+
+/** Schema for game state data transfer object */
+export const GameStateDTOSchema = v.object({
+  board: BoardStateSchema,
+  currentPlayer: PlayerIdSchema,
+  phase: GamePhaseSchema,
+  winner: v.nullable(PlayerIdSchema),
+  isDraw: v.boolean(),
+  turnHistory: v.array(TurnResultDTOSchema),
 });
 
 // ===== Inferred Types =====

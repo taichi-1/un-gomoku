@@ -15,6 +15,7 @@ export function createInitialGameState(): GameStateDTO {
     phase: "waiting",
     winner: null,
     isDraw: false,
+    turnHistory: [],
   };
 }
 

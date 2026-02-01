@@ -11,7 +11,7 @@ function createFakeWs(): {
 } {
   const sent: unknown[] = [];
   const ws = {
-    data: { roomId: null, playerId: null },
+    data: { roomId: null, playerId: null, playerToken: null },
     send: (data: string) => {
       sent.push(JSON.parse(data));
     },

@@ -4,7 +4,11 @@ import type { WebSocketData } from "../types";
 import { createRoom, getRoom, joinRoom, removePlayer } from "./room.service";
 
 function createMockWs(): ServerWebSocket<WebSocketData> {
-  const data: WebSocketData = { roomId: null, playerId: null };
+  const data: WebSocketData = {
+    roomId: null,
+    playerId: null,
+    playerToken: null,
+  };
   return { data } as unknown as ServerWebSocket<WebSocketData>;
 }
 
@@ -14,8 +18,10 @@ describe("room.service", () => {
     const result = createRoom(ws);
     expect(result.playerId).toBe("player1");
     expect(result.roomId).toMatch(/^[A-Z0-9]{6}$/);
+    expect(result.playerToken.length).toBeGreaterThan(0);
     expect(ws.data.roomId).toBe(result.roomId);
     expect(ws.data.playerId).toBe("player1");
+    expect(ws.data.playerToken).toBe(result.playerToken);
   });
 
   test("getRoom returns room after createRoom", () => {
@@ -35,9 +41,11 @@ describe("room.service", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.playerId).toBe("player2");
+      expect(result.isReconnect).toBe(false);
       expect(result.room.players.size).toBe(2);
       expect(ws2.data.roomId).toBe(roomId);
       expect(ws2.data.playerId).toBe("player2");
+      expect(ws2.data.playerToken).toBe(result.playerToken);
     }
   });
 
@@ -63,12 +71,12 @@ describe("room.service", () => {
     }
   });
 
-  test("removePlayer removes player and deletes empty room", () => {
+  test("removePlayer keeps room for reconnect when empty", () => {
     const ws = createMockWs();
     const { roomId } = createRoom(ws);
     expect(getRoom(roomId)).toBeDefined();
     removePlayer(ws);
-    expect(getRoom(roomId)).toBeUndefined();
+    expect(getRoom(roomId)).toBeDefined();
   });
 
   test("removePlayer keeps room when other player remains", () => {
@@ -79,6 +87,6 @@ describe("room.service", () => {
     removePlayer(ws1);
     expect(getRoom(roomId)).toBeDefined();
     removePlayer(ws2);
-    expect(getRoom(roomId)).toBeUndefined();
+    expect(getRoom(roomId)).toBeDefined();
   });
 });

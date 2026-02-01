@@ -66,6 +66,18 @@ describe("parseClientMessage", () => {
       }
     });
 
+    test("should parse valid room.join message with playerToken", () => {
+      const result = parseClientMessage({
+        event: "room.join",
+        roomId: "ABC123",
+        playerToken: "token123",
+      });
+      expect(result.success).toBe(true);
+      if (result.success && result.output.event === "room.join") {
+        expect(result.output.playerToken).toBe("token123");
+      }
+    });
+
     test("should reject room.join with empty roomId", () => {
       const result = parseClientMessage({ event: "room.join", roomId: "" });
       expect(result.success).toBe(false);
@@ -74,6 +86,29 @@ describe("parseClientMessage", () => {
     test("should reject room.join without roomId", () => {
       const result = parseClientMessage({ event: "room.join" });
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("game.undo", () => {
+    test("should parse valid game.undo.request message", () => {
+      const result = parseClientMessage({
+        event: "game.undo.request",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    test("should parse valid game.undo.accept message", () => {
+      const result = parseClientMessage({
+        event: "game.undo.accept",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    test("should parse valid game.undo.reject message", () => {
+      const result = parseClientMessage({
+        event: "game.undo.reject",
+      });
+      expect(result.success).toBe(true);
     });
   });
 

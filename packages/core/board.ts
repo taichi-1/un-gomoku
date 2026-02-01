@@ -39,3 +39,20 @@ export function placeStone(
   }
   return newBoard;
 }
+
+/**
+ * Removes a stone from the board at the specified position.
+ * Returns a new board without mutating the original.
+ *
+ * @param board - The current board state
+ * @param coord - The coordinate where the stone should be removed
+ * @returns A new board with the stone removed
+ */
+export function removeStone(board: BoardState, coord: Coordinate): BoardState {
+  const newBoard = board.map((row) => [...row]);
+  const row = newBoard[coord.y];
+  if (row) {
+    row[coord.x] = null;
+  }
+  return newBoard;
+}

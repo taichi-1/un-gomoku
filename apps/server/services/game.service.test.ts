@@ -9,6 +9,9 @@ function createTestRoom(): Room {
     id: "TEST01",
     players: new Map(),
     state: createInitialGameState(),
+    tokens: new Map(),
+    pendingUndo: null,
+    emptyAt: null,
   };
 }
 
@@ -100,6 +103,7 @@ describe("processTurn", () => {
     expect(room.state.board[0]?.[0]).toBe("player1");
     expect(room.state.currentPlayer).toBe("player2");
     expect(room.state.phase).toBe("playing");
+    expect(room.state.turnHistory).toHaveLength(1);
   });
 
   test("on failure: switches turn without placing stone", () => {
@@ -110,6 +114,7 @@ describe("processTurn", () => {
     processTurn({ room, playerId: "player1", candidates }, () => 0.6);
     expect(room.state.board[0]?.[0]).toBe(null);
     expect(room.state.currentPlayer).toBe("player2");
+    expect(room.state.turnHistory).toHaveLength(1);
   });
 
   test("on win: sets phase to finished and winner", () => {
@@ -124,5 +129,6 @@ describe("processTurn", () => {
     processTurn({ room, playerId: "player1", candidates }, () => 0);
     expect((room.state as { phase: string }).phase).toBe("finished");
     expect(room.state.winner).toBe("player1");
+    expect(room.state.turnHistory).toHaveLength(1);
   });
 });

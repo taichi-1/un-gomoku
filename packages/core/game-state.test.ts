@@ -14,6 +14,7 @@ describe("createInitialGameState", () => {
     expect(state.phase).toBe("waiting");
     expect(state.winner).toBeNull();
     expect(state.isDraw).toBe(false);
+    expect(state.turnHistory).toEqual([]);
     expect(state.board.length).toBe(BOARD_SIZE);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { BOARD_SIZE } from "@pkg/shared/constants";
-import { createEmptyBoard, placeStone } from "./board";
+import { createEmptyBoard, placeStone, removeStone } from "./board";
 
 describe("createEmptyBoard", () => {
   test("should create a board with correct dimensions", () => {
@@ -32,5 +32,16 @@ describe("placeStone", () => {
     const board = createEmptyBoard();
     placeStone(board, { x: 0, y: 0 }, "player2");
     expect(board[0]?.[0]).toBeNull();
+  });
+});
+
+describe("removeStone", () => {
+  test("should remove stone and return new board", () => {
+    const board = createEmptyBoard();
+    const withStone = placeStone(board, { x: 7, y: 7 }, "player1");
+    const newBoard = removeStone(withStone, { x: 7, y: 7 });
+
+    expect(newBoard[7]?.[7]).toBeNull();
+    expect(withStone[7]?.[7]).toBe("player1");
   });
 });
