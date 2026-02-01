@@ -1,13 +1,15 @@
 import {
   BOARD_SIZE,
-  type Coordinate,
-  type GameStateDTO,
   MAX_CANDIDATES,
-  type PlayerId,
-  type ServerMessage,
   SUCCESS_PROBABILITY,
-  WS_EVENTS,
-} from "@pkg/shared";
+} from "@pkg/shared/constants";
+import { WS_EVENTS } from "@pkg/shared/events";
+import type {
+  Coordinate,
+  GameStateDTO,
+  PlayerId,
+  ServerMessage,
+} from "@pkg/shared/schemas";
 
 // ===== State =====
 

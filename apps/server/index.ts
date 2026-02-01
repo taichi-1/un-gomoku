@@ -1,21 +1,20 @@
+import { placeStone } from "@pkg/core/board";
 import {
-  checkWinAt,
   createInitialGameState,
   getNextPlayer,
   isBoardFull,
-  isValidCandidate,
-  placeStone,
-} from "@pkg/core";
+} from "@pkg/core/game-state";
+import { isValidCandidate } from "@pkg/core/validation";
+import { checkWinAt } from "@pkg/core/win-detection";
+import { MAX_CANDIDATES, SUCCESS_PROBABILITY } from "@pkg/shared/constants";
+import { WS_EVENTS } from "@pkg/shared/events";
 import {
-  type ClientMessage,
   type Coordinate,
   type GameStateDTO,
-  MAX_CANDIDATES,
   type PlayerId,
+  parseClientMessage,
   type ServerMessage,
-  SUCCESS_PROBABILITY,
-  WS_EVENTS,
-} from "@pkg/shared";
+} from "@pkg/shared/schemas";
 import type { ServerWebSocket } from "bun";
 
 // ===== Room Management =====
@@ -241,9 +240,30 @@ const server = Bun.serve<WebSocketData>({
       console.log("Client connected");
     },
     message(ws, message) {
+      let json: unknown;
       try {
-        const data = JSON.parse(message.toString()) as ClientMessage;
+        json = JSON.parse(message.toString());
+      } catch {
+        sendMessage(ws, {
+          event: WS_EVENTS.GAME_ERROR,
+          message: "Invalid JSON",
+        });
+        return;
+      }
 
+      const result = parseClientMessage(json);
+      if (!result.success) {
+        const issue = result.issues[0];
+        sendMessage(ws, {
+          event: WS_EVENTS.GAME_ERROR,
+          message: `Validation error: ${issue?.message ?? "Unknown error"}`,
+        });
+        return;
+      }
+
+      const data = result.output;
+
+      try {
         switch (data.event) {
           case WS_EVENTS.ROOM_CREATE: {
             const roomId = generateRoomId();
@@ -312,7 +332,7 @@ const server = Bun.serve<WebSocketData>({
         console.error("Error processing message:", error);
         sendMessage(ws, {
           event: WS_EVENTS.GAME_ERROR,
-          message: "Invalid message format",
+          message: "Error processing message",
         });
       }
     },

@@ -1,12 +1,19 @@
 {
   "name": "@pkg/shared",
   "private": true,
-  "module": "index.ts",
   "type": "module",
+  "exports": {
+    "./constants": "./constants.ts",
+    "./events": "./events.ts",
+    "./schemas": "./schemas/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "valibot": "^1.2.0"
   }
 }

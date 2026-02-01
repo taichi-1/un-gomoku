@@ -1,8 +1,13 @@
 {
   "name": "@pkg/core",
   "private": true,
-  "module": "index.ts",
   "type": "module",
+  "exports": {
+    "./board": "./board.ts",
+    "./game-state": "./game-state.ts",
+    "./validation": "./validation.ts",
+    "./win-detection": "./win-detection.ts"
+  },
   "dependencies": {
     "@pkg/shared": "workspace:*"
   },

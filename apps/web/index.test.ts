@@ -3,8 +3,8 @@ import {
   BOARD_SIZE,
   MAX_CANDIDATES,
   SUCCESS_PROBABILITY,
-  WS_EVENTS,
-} from "@pkg/shared";
+} from "@pkg/shared/constants";
+import { WS_EVENTS } from "@pkg/shared/events";
 
 describe("@pkg/shared imports", () => {
   test("should import BOARD_SIZE correctly", () => {

@@ -1,17 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { BOARD_SIZE } from "@pkg/shared";
+import { BOARD_SIZE } from "@pkg/shared/constants";
+import { createEmptyBoard, placeStone } from "./board";
 import {
-  checkWinAt,
-  createEmptyBoard,
   createInitialGameState,
-  findWinner,
   getNextPlayer,
   isBoardFull,
-  isEmpty,
-  isInBounds,
-  isValidCandidate,
-  placeStone,
-} from "./index";
+} from "./game-state";
+import { isEmpty, isInBounds, isValidCandidate } from "./validation";
+import { checkWinAt, findWinner } from "./win-detection";
 
 describe("createEmptyBoard", () => {
   test("should create a board with correct dimensions", () => {

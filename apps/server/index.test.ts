@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { Coordinate } from "@pkg/shared";
+import type { Coordinate } from "@pkg/shared/schemas";
 import {
   calculateSuccess,
   generateRoomId,
