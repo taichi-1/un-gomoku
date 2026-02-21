@@ -2,15 +2,34 @@ import { WS_EVENTS } from "@pkg/shared/events";
 import type { Coordinate } from "@pkg/shared/schemas";
 import type { ServerWebSocket } from "bun";
 import {
-  acceptUndo,
   getRoom,
   processTurn,
-  rejectUndo,
-  requestUndo,
+  updateCandidateDraft,
+  validateDraftUpdateContext,
   validateTurnContext,
 } from "../services";
 import type { WebSocketData } from "../types";
-import { broadcastToRoom, sendMessage } from "../utils";
+import { sendMessage } from "../utils";
+
+export function handleUpdateCandidateDraft(
+  ws: ServerWebSocket<WebSocketData>,
+  candidates: Coordinate[],
+): void {
+  const room = getRoom(ws.data.roomId ?? "");
+  const validation = validateDraftUpdateContext(
+    room,
+    ws.data.playerId,
+    candidates,
+  );
+  if ("kind" in validation) {
+    sendMessage(ws, {
+      event: WS_EVENTS.GAME_ERROR,
+      message: validation.message,
+    });
+    return;
+  }
+  updateCandidateDraft(validation);
+}
 
 export function handleSubmitCandidates(
   ws: ServerWebSocket<WebSocketData>,
@@ -26,43 +45,4 @@ export function handleSubmitCandidates(
     return;
   }
   processTurn(validation);
-}
-
-export function handleUndoRequest(ws: ServerWebSocket<WebSocketData>): void {
-  const room = getRoom(ws.data.roomId ?? "");
-  const result = requestUndo(room, ws.data.playerId);
-  if ("kind" in result) {
-    sendMessage(ws, { event: WS_EVENTS.GAME_ERROR, message: result.message });
-    return;
-  }
-  broadcastToRoom(result.room, {
-    event: WS_EVENTS.GAME_UNDO_PENDING,
-    requester: result.requester,
-  });
-}
-
-export function handleUndoAccept(ws: ServerWebSocket<WebSocketData>): void {
-  const room = getRoom(ws.data.roomId ?? "");
-  const result = acceptUndo(room, ws.data.playerId);
-  if ("kind" in result) {
-    sendMessage(ws, { event: WS_EVENTS.GAME_ERROR, message: result.message });
-    return;
-  }
-  broadcastToRoom(result.room, {
-    event: WS_EVENTS.GAME_UNDO_APPLIED,
-    state: result.nextState,
-  });
-}
-
-export function handleUndoReject(ws: ServerWebSocket<WebSocketData>): void {
-  const room = getRoom(ws.data.roomId ?? "");
-  const result = rejectUndo(room, ws.data.playerId);
-  if ("kind" in result) {
-    sendMessage(ws, { event: WS_EVENTS.GAME_ERROR, message: result.message });
-    return;
-  }
-  broadcastToRoom(result.room, {
-    event: WS_EVENTS.GAME_UNDO_REJECTED,
-    requester: result.requester,
-  });
 }

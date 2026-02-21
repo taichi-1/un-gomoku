@@ -1,9 +1,24 @@
 # @app/web
 
-Frontend UI. Treats server state as authoritative.
+React frontend for un-gomoku.
 
 ## Responsibilities
 
-- Board, stones, and turn indicator rendering
-- Local UI state management (selected candidates, animations, etc.)
-- WebSocket client sending commands to the server
+- Title screen and game screen routing (`/`, `/local`, `/online/:roomId`)
+- Shared game UI for local and online play
+- Local mode game resolution using `@pkg/core`
+- Online mode synchronization through WebSocket events
+- i18n (`ja` / `en`) and responsive mobile-first layout
+
+## Development
+
+```bash
+# from repository root
+bun run dev:web
+
+# build
+bun run build:web
+
+# typecheck
+bun run typecheck
+```

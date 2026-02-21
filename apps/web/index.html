@@ -1,177 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>un-gomoku</title>
-	<style>
-		* {
-			box-sizing: border-box;
-			margin: 0;
-			padding: 0;
-		}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const LANGUAGE_STORAGE_KEY = "ungomoku.lang";
+        const THEME_STORAGE_KEY = "ungomoku.theme";
 
-		body {
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-			background: #1a1a2e;
-			color: #eee;
-			min-height: 100vh;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			padding: 20px;
-		}
+        const resolveLanguage = () => {
+          try {
+            const fromStorage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+            if (typeof fromStorage === "string") {
+              const normalized = fromStorage.toLowerCase();
+              if (normalized.startsWith("ja")) return "ja";
+              if (normalized.startsWith("en")) return "en";
+            }
+          } catch {}
 
-		h1 {
-			margin-bottom: 20px;
-			color: #4ecca3;
-		}
+          const browserLanguage = navigator.language?.toLowerCase() ?? "ja";
+          return browserLanguage.startsWith("en") ? "en" : "ja";
+        };
 
-		#status {
-			margin-bottom: 10px;
-			font-size: 1.2rem;
-		}
+        const resolveTheme = () => {
+          try {
+            const fromStorage = localStorage.getItem(THEME_STORAGE_KEY);
+            if (fromStorage === "light" || fromStorage === "dark") {
+              return fromStorage;
+            }
+          } catch {}
 
-		#room-controls {
-			margin-bottom: 20px;
-			display: flex;
-			gap: 10px;
-		}
+          if (
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+          ) {
+            return "dark";
+          }
+          return "light";
+        };
 
-		button {
-			padding: 10px 20px;
-			font-size: 1rem;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-			background: #4ecca3;
-			color: #1a1a2e;
-			transition: background 0.2s;
-		}
+        const root = document.documentElement;
+        const language = resolveLanguage();
+        const theme = resolveTheme();
 
-		button:hover {
-			background: #3db892;
-		}
-
-		button:disabled {
-			background: #666;
-			cursor: not-allowed;
-		}
-
-		input {
-			padding: 10px;
-			font-size: 1rem;
-			border: 2px solid #4ecca3;
-			border-radius: 5px;
-			background: #16213e;
-			color: #eee;
-			width: 120px;
-		}
-
-		#board-container {
-			display: none;
-			flex-direction: column;
-			align-items: center;
-		}
-
-		#board {
-			display: grid;
-			grid-template-columns: repeat(15, 30px);
-			grid-template-rows: repeat(15, 30px);
-			gap: 1px;
-			background: #2a2a4a;
-			padding: 10px;
-			border-radius: 5px;
-		}
-
-		.cell {
-			width: 30px;
-			height: 30px;
-			background: #c9a86c;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			cursor: pointer;
-			position: relative;
-			transition: background 0.2s;
-		}
-
-		.cell:hover {
-			background: #b89a5c;
-		}
-
-		.cell.selected {
-			background: #ffd700;
-		}
-
-		.cell.player1 {
-			cursor: default;
-		}
-
-		.cell.player1::after {
-			content: "";
-			width: 24px;
-			height: 24px;
-			border-radius: 50%;
-			background: #111;
-		}
-
-		.cell.player2 {
-			cursor: default;
-		}
-
-		.cell.player2::after {
-			content: "";
-			width: 24px;
-			height: 24px;
-			border-radius: 50%;
-			background: #fff;
-		}
-
-		#game-info {
-			margin-top: 20px;
-			text-align: center;
-		}
-
-		#candidates-info {
-			margin-top: 10px;
-			font-size: 0.9rem;
-			color: #aaa;
-		}
-
-		#submit-btn {
-			margin-top: 15px;
-		}
-
-		.hidden[hidden] {
-			display: none;
-		}
-
-		.hidden {
-			display: none;
-		}
-	</style>
-</head>
-<body>
-	<h1>un-gomoku</h1>
-
-	<div id="status">接続中...</div>
-
-	<div id="room-controls">
-		<button id="create-btn">ルーム作成</button>
-		<input type="text" id="room-input" placeholder="ルームID">
-		<button id="join-btn">参加</button>
-	</div>
-
-	<div id="board-container">
-		<div id="board"></div>
-		<div id="game-info">
-			<div id="turn-info"></div>
-			<div id="candidates-info">候補を選択してください (1-5箇所)</div>
-			<button id="submit-btn" class="hidden">決定</button>
-		</div>
-	</div>
-
-	<script type="module" src="./frontend.ts"></script>
-</body>
+        root.lang = language;
+        root.dataset.theme = theme;
+        root.classList.toggle("dark", theme === "dark");
+        root.style.colorScheme = theme;
+      })();
+    </script>
+    <title>un-gomoku</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

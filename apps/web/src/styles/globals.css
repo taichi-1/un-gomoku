@@ -1,0 +1,165 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Shippori+Mincho+B1:wght@500;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  --font-ui: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-display: "Shippori Mincho B1", "Noto Serif JP", serif;
+  --board-wood-1: #cf953f;
+  --board-wood-2: #b77b2e;
+  --board-wood-3: #9e661f;
+  --board-wood-4: #875317;
+  --board-frame-1: #b58a48;
+  --board-frame-2: #866234;
+  --board-frame-3: #5c4324;
+  --stone-black-fill: #070605;
+  --stone-black-stroke: #1a1611;
+  --stone-white-fill: #f4efe6;
+  --stone-white-stroke: #d7cabc;
+  --stone-black-highlight: rgba(255, 240, 220, 0.17);
+  --stone-white-highlight: rgba(255, 255, 255, 0.44);
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-0: #15110d;
+  --bg-1: #1f1914;
+  --bg-2: #2a221b;
+  --surface-1: rgba(43, 34, 24, 0.82);
+  --surface-2: #33291f;
+  --border-1: #6b573f;
+  --border-2: #897054;
+  --text-strong: #efe4d3;
+  --text-normal: #dbc8aa;
+  --text-muted: #aa9274;
+  --accent-gold-1: #d0a15a;
+  --accent-gold-2: #b5853f;
+  --accent-gold-3: #8f672f;
+  --accent-crimson-1: #97a2b2;
+  --accent-crimson-2: #5e6877;
+  --state-success: #7ea06b;
+  --tone-gold-soft-border: rgba(181, 133, 63, 0.62);
+  --tone-gold-soft-bg: rgba(208, 161, 90, 0.14);
+  --tone-gold-soft-bg-hover: rgba(208, 161, 90, 0.2);
+  --tone-error-soft-bg: rgba(151, 162, 178, 0.16);
+  --table-divider: rgba(77, 61, 42, 0.72);
+  --btn-start-bg: #9a6b32;
+  --btn-start-hover: #ae7a3c;
+  --btn-start-text: #f9f3e7;
+  --btn-start-ring: #ae7a3c;
+  --btn-create-bg: #b46e3d;
+  --btn-create-hover: #c98252;
+  --btn-create-text: #f8edde;
+  --btn-join-bg: #5f7133;
+  --btn-join-hover: #748a42;
+  --btn-join-text: #f9f3e7;
+  --btn-join-ring: #748a42;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-0: #f6efe3;
+  --bg-1: #efe5d6;
+  --bg-2: #e5d8c2;
+  --surface-1: rgba(255, 250, 241, 0.9);
+  --surface-2: #f8eee1;
+  --border-1: #cbb498;
+  --border-2: #b29978;
+  --text-strong: #3f2f1f;
+  --text-normal: #56412d;
+  --text-muted: #7d664f;
+  --accent-gold-1: #ba8b4c;
+  --accent-gold-2: #a5763a;
+  --accent-gold-3: #845a2d;
+  --accent-crimson-1: #5f6d82;
+  --accent-crimson-2: #435065;
+  --state-success: #5f7c4b;
+  --tone-gold-soft-border: rgba(165, 118, 58, 0.52);
+  --tone-gold-soft-bg: rgba(165, 118, 58, 0.11);
+  --tone-gold-soft-bg-hover: rgba(165, 118, 58, 0.18);
+  --tone-error-soft-bg: rgba(95, 109, 130, 0.14);
+  --table-divider: rgba(138, 117, 92, 0.5);
+  --btn-start-bg: #96652f;
+  --btn-start-hover: #a87439;
+  --btn-start-text: #f9f3e7;
+  --btn-start-ring: #a87439;
+  --btn-create-bg: #9a5931;
+  --btn-create-hover: #ad6a40;
+  --btn-create-text: #f9f3e7;
+  --btn-join-bg: #5a6b32;
+  --btn-join-hover: #6f8440;
+  --btn-join-text: #f9f3e7;
+  --btn-join-ring: #6f8440;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  background: linear-gradient(
+    160deg,
+    var(--bg-0) 0%,
+    var(--bg-1) 55%,
+    var(--bg-2) 100%
+  );
+  color: var(--text-normal);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.game-status-surface {
+  border-radius: 0.375rem;
+  border-color: var(--border-1);
+  background: var(--surface-1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 204, 0.05),
+    0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.game-status-content {
+  min-height: 2.25rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.game-status-label {
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+@media (min-width: 640px) {
+  .game-status-content {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .game-status-label {
+    font-size: 0.75rem;
+  }
+}

@@ -12,7 +12,9 @@
     "format": "bunx biome format --write .",
     "typecheck": "bunx tsc --noEmit",
     "dev:server": "bun --hot apps/server/index.ts",
-    "dev:web": "bun --hot apps/web/index.ts"
+    "dev:web": "bun run --cwd apps/web dev",
+    "build:web": "bun run --cwd apps/web build",
+    "preview:web": "bun run --cwd apps/web preview"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",

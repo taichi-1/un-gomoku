@@ -1,4 +1,4 @@
-import type { GameStateDTO, PlayerId } from "@pkg/shared/schemas";
+import type { Coordinate, GameStateDTO, PlayerId } from "@pkg/shared/schemas";
 import type { ServerWebSocket } from "bun";
 
 export interface WebSocketData {
@@ -11,10 +11,7 @@ export interface Room {
   id: string;
   players: Map<PlayerId, ServerWebSocket<WebSocketData>>;
   state: GameStateDTO;
+  candidateDrafts: Record<PlayerId, Coordinate[]>;
   tokens: Map<PlayerId, string>;
-  pendingUndo: {
-    requester: PlayerId;
-    requestedAt: number;
-  } | null;
   emptyAt: number | null;
 }

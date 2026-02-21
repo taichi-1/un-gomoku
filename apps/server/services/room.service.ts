@@ -44,8 +44,8 @@ export function createRoom(
     id: roomId,
     players: new Map([["player1", ws]]),
     state: createInitialGameState(),
+    candidateDrafts: { player1: [], player2: [] },
     tokens: new Map([["player1", playerToken]]),
-    pendingUndo: null,
     emptyAt: null,
   };
   rooms.set(roomId, room);
@@ -89,9 +89,17 @@ export function joinRoom(
     if (!playerId) {
       return { success: false, error: "Invalid token" };
     }
-    if (room.players.has(playerId)) {
-      return { success: false, error: "Room is full" };
+    const existingWs = room.players.get(playerId);
+    if (existingWs && existingWs !== ws) {
+      // Prefer the latest connection for the same player token.
+      existingWs.data.roomId = null;
+      existingWs.data.playerId = null;
+      existingWs.data.playerToken = null;
+      if ("close" in existingWs && typeof existingWs.close === "function") {
+        existingWs.close();
+      }
     }
+
     room.players.set(playerId, ws);
     ws.data.roomId = roomId;
     ws.data.playerId = playerId;
@@ -138,9 +146,12 @@ export function removePlayer(
 
   const room = rooms.get(roomId);
   if (room) {
-    room.players.delete(playerId);
-    if (room.players.size === 0) {
-      room.emptyAt = Date.now();
+    const currentWs = room.players.get(playerId);
+    if (currentWs === ws) {
+      room.players.delete(playerId);
+      if (room.players.size === 0) {
+        room.emptyAt = Date.now();
+      }
     }
   }
 
@@ -156,6 +167,7 @@ export function startGame(
   random: () => number = Math.random,
 ): void {
   const startingPlayer = random() < 0.5 ? "player1" : "player2";
+  room.candidateDrafts = { player1: [], player2: [] };
   room.state = {
     ...room.state,
     phase: "playing",

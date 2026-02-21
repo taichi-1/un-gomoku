@@ -89,29 +89,6 @@ describe("parseClientMessage", () => {
     });
   });
 
-  describe("game.undo", () => {
-    test("should parse valid game.undo.request message", () => {
-      const result = parseClientMessage({
-        event: "game.undo.request",
-      });
-      expect(result.success).toBe(true);
-    });
-
-    test("should parse valid game.undo.accept message", () => {
-      const result = parseClientMessage({
-        event: "game.undo.accept",
-      });
-      expect(result.success).toBe(true);
-    });
-
-    test("should parse valid game.undo.reject message", () => {
-      const result = parseClientMessage({
-        event: "game.undo.reject",
-      });
-      expect(result.success).toBe(true);
-    });
-  });
-
   describe("game.submitCandidates", () => {
     test("should parse valid submitCandidates with 1 candidate", () => {
       const result = parseClientMessage({
@@ -176,6 +153,57 @@ describe("parseClientMessage", () => {
       const result = parseClientMessage({
         event: "game.submitCandidates",
         candidates: [{ x: BOARD_SIZE, y: 0 }],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("game.updateCandidateDraft", () => {
+    test("should parse valid updateCandidateDraft with empty candidates", () => {
+      const result = parseClientMessage({
+        event: "game.updateCandidateDraft",
+        candidates: [],
+      });
+      expect(result.success).toBe(true);
+      if (
+        result.success &&
+        result.output.event === "game.updateCandidateDraft"
+      ) {
+        expect(result.output.candidates).toHaveLength(0);
+      }
+    });
+
+    test("should parse valid updateCandidateDraft with 5 candidates", () => {
+      const result = parseClientMessage({
+        event: "game.updateCandidateDraft",
+        candidates: [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+          { x: 2, y: 2 },
+          { x: 3, y: 3 },
+          { x: 4, y: 4 },
+        ],
+      });
+      expect(result.success).toBe(true);
+      if (
+        result.success &&
+        result.output.event === "game.updateCandidateDraft"
+      ) {
+        expect(result.output.candidates).toHaveLength(5);
+      }
+    });
+
+    test("should reject updateCandidateDraft with more than 5 candidates", () => {
+      const result = parseClientMessage({
+        event: "game.updateCandidateDraft",
+        candidates: [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+          { x: 2, y: 2 },
+          { x: 3, y: 3 },
+          { x: 4, y: 4 },
+          { x: 5, y: 5 },
+        ],
       });
       expect(result.success).toBe(false);
     });

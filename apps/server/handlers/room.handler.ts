@@ -45,6 +45,13 @@ export function handleRoomJoin(
       event: WS_EVENTS.GAME_STATE,
       state: result.room.state,
     });
+    for (const draftPlayerId of ["player1", "player2"] as const) {
+      broadcastToRoom(result.room, {
+        event: WS_EVENTS.GAME_CANDIDATE_DRAFT_UPDATED,
+        playerId: draftPlayerId,
+        candidates: result.room.candidateDrafts[draftPlayerId],
+      });
+    }
     const opponentId = getOpponentPlayerId(result.playerId);
     if (result.room.players.has(opponentId)) {
       broadcastToRoomExcept(result.room, result.playerId, {
@@ -65,16 +72,6 @@ export function handleRoomJoin(
 export function handleDisconnect(ws: ServerWebSocket<WebSocketData>): void {
   const result = removePlayer(ws);
   if (!result) return;
-  if (result.room.pendingUndo) {
-    const requester = result.room.pendingUndo.requester;
-    result.room.pendingUndo = null;
-    if (result.room.players.size > 0) {
-      broadcastToRoom(result.room, {
-        event: WS_EVENTS.GAME_UNDO_REJECTED,
-        requester,
-      });
-    }
-  }
   if (result.room.players.size > 0) {
     broadcastToRoom(result.room, {
       event: WS_EVENTS.ROOM_OPPONENT_OFFLINE,

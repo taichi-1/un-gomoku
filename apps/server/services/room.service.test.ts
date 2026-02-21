@@ -9,7 +9,10 @@ function createMockWs(): ServerWebSocket<WebSocketData> {
     playerId: null,
     playerToken: null,
   };
-  return { data } as unknown as ServerWebSocket<WebSocketData>;
+  return {
+    data,
+    close: () => undefined,
+  } as unknown as ServerWebSocket<WebSocketData>;
 }
 
 describe("room.service", () => {
@@ -71,6 +74,37 @@ describe("room.service", () => {
     }
   });
 
+  test("joinRoom with same token replaces existing player connection", () => {
+    let closed = false;
+    const ws1 = {
+      data: {
+        roomId: null,
+        playerId: null,
+        playerToken: null,
+      } as WebSocketData,
+      close: () => {
+        closed = true;
+      },
+    } as unknown as ServerWebSocket<WebSocketData>;
+
+    const { roomId, playerToken } = createRoom(ws1);
+    const wsReconnect = createMockWs();
+    const result = joinRoom(wsReconnect, roomId, playerToken);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.playerId).toBe("player1");
+      expect(result.isReconnect).toBe(true);
+    }
+
+    const room = getRoom(roomId);
+    expect(room?.players.get("player1")).toBe(wsReconnect);
+    expect(closed).toBe(true);
+    expect(ws1.data.roomId).toBeNull();
+    expect(ws1.data.playerId).toBeNull();
+    expect(ws1.data.playerToken).toBeNull();
+  });
+
   test("removePlayer keeps room for reconnect when empty", () => {
     const ws = createMockWs();
     const { roomId } = createRoom(ws);
@@ -88,5 +122,23 @@ describe("room.service", () => {
     expect(getRoom(roomId)).toBeDefined();
     removePlayer(ws2);
     expect(getRoom(roomId)).toBeDefined();
+  });
+
+  test("removePlayer ignores stale socket after connection replacement", () => {
+    const ws1 = createMockWs();
+    const { roomId, playerToken } = createRoom(ws1);
+    const wsReconnect = createMockWs();
+    joinRoom(wsReconnect, roomId, playerToken);
+
+    const roomBefore = getRoom(roomId);
+    expect(roomBefore?.players.get("player1")).toBe(wsReconnect);
+
+    removePlayer(ws1);
+    const roomAfterStaleDisconnect = getRoom(roomId);
+    expect(roomAfterStaleDisconnect?.players.get("player1")).toBe(wsReconnect);
+
+    removePlayer(wsReconnect);
+    const roomAfterCurrentDisconnect = getRoom(roomId);
+    expect(roomAfterCurrentDisconnect?.players.has("player1")).toBe(false);
   });
 });

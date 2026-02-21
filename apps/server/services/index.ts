@@ -1,10 +1,12 @@
 export {
-  acceptUndo,
+  normalizeCandidates,
   type ProcessTurnContext,
   type ProcessTurnError,
   processTurn,
-  rejectUndo,
-  requestUndo,
+  type UpdateCandidateDraftContext,
+  type UpdateCandidateDraftError,
+  updateCandidateDraft,
+  validateDraftUpdateContext,
   validateTurnContext,
 } from "./game.service";
 export {

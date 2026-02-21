@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { MAX_CANDIDATES } from "../constants";
 import { WS_EVENTS } from "../events";
 import { GameStateDTOSchema, TurnResultDTOSchema } from "./game";
 import { CoordinateSchema, PlayerIdSchema } from "./primitives";
@@ -20,32 +21,25 @@ export const RoomJoinPayloadSchema = v.object({
 /** Schema for game.submitCandidates event payload */
 export const SubmitCandidatesPayloadSchema = v.object({
   event: v.literal(WS_EVENTS.GAME_SUBMIT_CANDIDATES),
-  candidates: v.pipe(v.array(CoordinateSchema), v.minLength(1), v.maxLength(5)),
+  candidates: v.pipe(
+    v.array(CoordinateSchema),
+    v.minLength(1),
+    v.maxLength(MAX_CANDIDATES),
+  ),
 });
 
-/** Schema for game.undo.request event payload */
-export const UndoRequestPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.GAME_UNDO_REQUEST),
-});
-
-/** Schema for game.undo.accept event payload */
-export const UndoAcceptPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.GAME_UNDO_ACCEPT),
-});
-
-/** Schema for game.undo.reject event payload */
-export const UndoRejectPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.GAME_UNDO_REJECT),
+/** Schema for game.updateCandidateDraft event payload */
+export const UpdateCandidateDraftPayloadSchema = v.object({
+  event: v.literal(WS_EVENTS.GAME_UPDATE_CANDIDATE_DRAFT),
+  candidates: v.pipe(v.array(CoordinateSchema), v.maxLength(MAX_CANDIDATES)),
 });
 
 /** Schema for all client messages (variant discriminated by event field) */
 export const ClientMessageSchema = v.variant("event", [
   RoomCreatePayloadSchema,
   RoomJoinPayloadSchema,
+  UpdateCandidateDraftPayloadSchema,
   SubmitCandidatesPayloadSchema,
-  UndoRequestPayloadSchema,
-  UndoAcceptPayloadSchema,
-  UndoRejectPayloadSchema,
 ]);
 
 // ===== Server -> Client Message Schemas =====
@@ -96,29 +90,18 @@ export const GameStatePayloadSchema = v.object({
   state: GameStateDTOSchema,
 });
 
+/** Schema for game.candidateDraftUpdated event payload */
+export const GameCandidateDraftUpdatedPayloadSchema = v.object({
+  event: v.literal(WS_EVENTS.GAME_CANDIDATE_DRAFT_UPDATED),
+  playerId: PlayerIdSchema,
+  candidates: v.pipe(v.array(CoordinateSchema), v.maxLength(MAX_CANDIDATES)),
+});
+
 /** Schema for game.turnResult event payload */
 export const GameTurnResultPayloadSchema = v.object({
   event: v.literal(WS_EVENTS.GAME_TURN_RESULT),
   result: TurnResultDTOSchema,
   state: GameStateDTOSchema,
-});
-
-/** Schema for game.undo.pending event payload */
-export const GameUndoPendingPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.GAME_UNDO_PENDING),
-  requester: PlayerIdSchema,
-});
-
-/** Schema for game.undo.applied event payload */
-export const GameUndoAppliedPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.GAME_UNDO_APPLIED),
-  state: GameStateDTOSchema,
-});
-
-/** Schema for game.undo.rejected event payload */
-export const GameUndoRejectedPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.GAME_UNDO_REJECTED),
-  requester: PlayerIdSchema,
 });
 
 /** Schema for game.error event payload */
@@ -136,10 +119,8 @@ export const ServerMessageSchema = v.variant("event", [
   RoomOpponentOnlinePayloadSchema,
   GameStartPayloadSchema,
   GameStatePayloadSchema,
+  GameCandidateDraftUpdatedPayloadSchema,
   GameTurnResultPayloadSchema,
-  GameUndoPendingPayloadSchema,
-  GameUndoAppliedPayloadSchema,
-  GameUndoRejectedPayloadSchema,
   GameErrorPayloadSchema,
 ]);
 
@@ -156,14 +137,10 @@ export type SubmitCandidatesPayload = v.InferOutput<
   typeof SubmitCandidatesPayloadSchema
 >;
 
-/** Undo request payload type */
-export type UndoRequestPayload = v.InferOutput<typeof UndoRequestPayloadSchema>;
-
-/** Undo accept payload type */
-export type UndoAcceptPayload = v.InferOutput<typeof UndoAcceptPayloadSchema>;
-
-/** Undo reject payload type */
-export type UndoRejectPayload = v.InferOutput<typeof UndoRejectPayloadSchema>;
+/** Update candidate draft payload type */
+export type UpdateCandidateDraftPayload = v.InferOutput<
+  typeof UpdateCandidateDraftPayloadSchema
+>;
 
 /** Client message type (union of all client payloads) */
 export type ClientMessage = v.InferOutput<typeof ClientMessageSchema>;
@@ -193,24 +170,14 @@ export type GameStartPayload = v.InferOutput<typeof GameStartPayloadSchema>;
 /** Game state payload type */
 export type GameStatePayload = v.InferOutput<typeof GameStatePayloadSchema>;
 
+/** Game candidate draft updated payload type */
+export type GameCandidateDraftUpdatedPayload = v.InferOutput<
+  typeof GameCandidateDraftUpdatedPayloadSchema
+>;
+
 /** Game turn result payload type */
 export type GameTurnResultPayload = v.InferOutput<
   typeof GameTurnResultPayloadSchema
->;
-
-/** Game undo pending payload type */
-export type GameUndoPendingPayload = v.InferOutput<
-  typeof GameUndoPendingPayloadSchema
->;
-
-/** Game undo applied payload type */
-export type GameUndoAppliedPayload = v.InferOutput<
-  typeof GameUndoAppliedPayloadSchema
->;
-
-/** Game undo rejected payload type */
-export type GameUndoRejectedPayload = v.InferOutput<
-  typeof GameUndoRejectedPayloadSchema
 >;
 
 /** Game error payload type */
