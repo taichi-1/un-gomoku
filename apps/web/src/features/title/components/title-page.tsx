@@ -1,7 +1,3 @@
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +10,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const ROOM_ID_PATTERN = /^[A-Z0-9]{6}$/;
 
@@ -70,11 +70,11 @@ export function TitlePage() {
   };
 
   return (
-    <main className="h-dvh w-full overflow-hidden p-4">
-      <div className="mx-auto flex size-full max-w-3xl flex-col gap-4">
+    <main className="min-h-dvh w-full p-4">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-36">
         <AppHeader showBrand={false} rules={rules} />
 
-        <div className="flex flex-1 -translate-y-8 flex-col justify-center-safe gap-4 sm:-translate-y-6">
+        <div className="flex flex-col gap-4 py-2 sm:py-4">
           <section className="space-y-2 px-2 text-center">
             <h1 className="font-display text-4xl font-bold tracking-tight text-(--text-strong) sm:text-5xl">
               {t("title.heading")}
