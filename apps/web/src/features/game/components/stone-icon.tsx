@@ -115,8 +115,8 @@ export function NumberedStoneIcon({
 }: NumberedStoneIconProps) {
   const numberColorClass =
     playerId === "player1"
-      ? "text-(--text-strong) drop-shadow-[0_1px_1px_rgba(0,0,0,0.65)]"
-      : "text-(--bg-0) drop-shadow-[0_1px_1px_rgba(255,255,255,0.42)]";
+      ? "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.65)]"
+      : "text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.42)]";
 
   return (
     <div
