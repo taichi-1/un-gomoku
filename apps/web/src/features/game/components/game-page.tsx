@@ -23,7 +23,10 @@ interface GamePageProps {
 export function GamePage({ controller }: GamePageProps) {
   const { t } = useTranslation();
   const { snapshot } = controller;
-  useCandidateSoundEffects(snapshot.selectedCandidates.length);
+  useCandidateSoundEffects(
+    snapshot.selectedCandidates.length,
+    snapshot.gameState.turnHistory.length,
+  );
 
   const rules = useMemo(
     () => [

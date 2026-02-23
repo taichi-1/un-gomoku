@@ -12,14 +12,27 @@ export type CandidateSoundAction =
   | { type: "select"; count: CandidateCount }
   | { type: "deselect"; countBeforeRemove: CandidateCount };
 
+interface ShouldSilenceCandidateSoundOnAutoClearInput {
+  previousCount: number;
+  nextCount: number;
+  previousTurnHistoryLength: number;
+  nextTurnHistoryLength: number;
+}
+
+export function shouldSilenceCandidateSoundOnAutoClear(
+  input: ShouldSilenceCandidateSoundOnAutoClearInput,
+): boolean {
+  return (
+    input.previousCount > 0 &&
+    input.nextCount === 0 &&
+    input.previousTurnHistoryLength !== input.nextTurnHistoryLength
+  );
+}
+
 export function resolveCandidateSoundAction(
   previousCount: number,
   nextCount: number,
 ): CandidateSoundAction | null {
-  if (previousCount > 0 && nextCount === 0) {
-    return null;
-  }
-
   const delta = nextCount - previousCount;
 
   if (delta === 1 && isCandidateCount(nextCount)) {
@@ -39,21 +52,33 @@ export function resolveCandidateSoundAction(
   return null;
 }
 
-export function useCandidateSoundEffects(selectedCandidateCount: number): void {
+export function useCandidateSoundEffects(
+  selectedCandidateCount: number,
+  turnHistoryLength: number,
+): void {
   const previousCountRef = useRef<number | null>(null);
+  const previousTurnHistoryLengthRef = useRef<number | null>(null);
 
   useEffect(() => {
     const previousCount = previousCountRef.current;
+    const previousTurnHistoryLength = previousTurnHistoryLengthRef.current;
 
-    if (previousCount === null) {
+    if (previousCount === null || previousTurnHistoryLength === null) {
       previousCountRef.current = selectedCandidateCount;
+      previousTurnHistoryLengthRef.current = turnHistoryLength;
       return;
     }
 
-    const action = resolveCandidateSoundAction(
+    const shouldSilenceSound = shouldSilenceCandidateSoundOnAutoClear({
       previousCount,
-      selectedCandidateCount,
-    );
+      nextCount: selectedCandidateCount,
+      previousTurnHistoryLength,
+      nextTurnHistoryLength: turnHistoryLength,
+    });
+
+    const action = shouldSilenceSound
+      ? null
+      : resolveCandidateSoundAction(previousCount, selectedCandidateCount);
 
     if (action?.type === "select") {
       playCandidateByCount(action.count);
@@ -62,5 +87,6 @@ export function useCandidateSoundEffects(selectedCandidateCount: number): void {
     }
 
     previousCountRef.current = selectedCandidateCount;
-  }, [selectedCandidateCount]);
+    previousTurnHistoryLengthRef.current = turnHistoryLength;
+  }, [selectedCandidateCount, turnHistoryLength]);
 }
