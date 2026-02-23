@@ -4,6 +4,8 @@ import { AppHeader } from "@/components/app-header";
 import { GameBoard } from "@/features/game/components/game-board";
 import { GameInfoPanel } from "@/features/game/components/game-info-panel";
 import { TurnStatusRow } from "@/features/game/components/turn-status-row";
+import { useCandidateSoundEffects } from "@/features/game/hooks/use-candidate-sound-effects";
+import { useGameEndSoundEffects } from "@/features/game/hooks/use-game-end-sound-effects";
 import { useTurnResolutionFx } from "@/features/game/hooks/use-turn-resolution-fx";
 import { shouldShowFinishedResult } from "@/features/game/lib/finished-result-visibility";
 import { resolvePlayingInfoCandidateCount } from "@/features/game/lib/playing-info-candidate-count";
@@ -21,6 +23,8 @@ interface GamePageProps {
 export function GamePage({ controller }: GamePageProps) {
   const { t } = useTranslation();
   const { snapshot } = controller;
+  useCandidateSoundEffects(snapshot.selectedCandidates.length);
+
   const rules = useMemo(
     () => [
       t("settings.rule1"),
@@ -52,6 +56,12 @@ export function GamePage({ controller }: GamePageProps) {
     hasActiveFx: activeFx !== null,
     hasPendingTurnHistorySync,
   });
+  useGameEndSoundEffects({
+    showFinishedResult,
+    gamePhase: snapshot.gameState.phase,
+    turnHistory: snapshot.gameState.turnHistory,
+  });
+
   const displayTurnPlayer = resolveTurnIndicatorPlayer({
     currentPlayer: snapshot.gameState.currentPlayer,
     lastTurnPlayer: snapshot.gameState.turnHistory.at(-1)?.player ?? null,

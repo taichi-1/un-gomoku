@@ -20,6 +20,7 @@ import {
   getPlacedCandidateIndex,
   getSequenceOverlayCandidates,
 } from "@/features/game/lib/turn-resolution-overlay";
+import { playBlink, playResult } from "@/features/game/sound/game-sound-player";
 
 interface TurnResolutionOverlayProps {
   activeFx: ActiveTurnResolutionFx | null;
@@ -270,8 +271,13 @@ export function TurnResolutionOverlay({
     const timerIds: ReturnType<typeof globalThis.setTimeout>[] = [];
 
     for (const step of sequenceSchedule.steps) {
+      const stepPlayKey = `${activeFx.id}:${step.stepIndex}`;
       const timeoutId = globalThis.setTimeout(() => {
         setActiveStepIndex(step.stepIndex);
+        if (!step.isActive) {
+          return;
+        }
+        playBlink(stepPlayKey);
       }, Math.round(step.startMs));
       timerIds.push(timeoutId);
     }
@@ -294,6 +300,9 @@ export function TurnResolutionOverlay({
     if (!activeFx || !displaySpec || phase !== "final") {
       return;
     }
+
+    const resultPlayKey = `${activeFx.id}`;
+    playResult(activeFx.result.success, resultPlayKey);
 
     return schedulePhaseCompletionTimer({
       phase: "final",

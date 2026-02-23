@@ -1,3 +1,7 @@
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,10 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 const ROOM_ID_PATTERN = /^[A-Z0-9]{6}$/;
 
