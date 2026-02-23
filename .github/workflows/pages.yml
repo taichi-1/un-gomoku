@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: 📄 Deploy to Cloudflare Pages
 
 on:
   workflow_dispatch:
@@ -30,4 +30,4 @@ jobs:
             pages deploy apps/web/dist
             --project-name ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
             --branch ${{ github.head_ref }}
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+            --commit-dirty=true
