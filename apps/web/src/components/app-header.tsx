@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { InfoPanel } from "@/components/info-panel";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { SfxMuteSwitcher } from "@/components/sfx-mute-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { cn } from "@/lib/cn";
 
@@ -25,7 +26,8 @@ export function AppHeader({ showBrand, rules }: AppHeaderProps) {
           un-gomoku
         </Link>
       ) : null}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center">
+        <SfxMuteSwitcher />
         <LanguageSwitcher />
         <ThemeSwitcher />
         <InfoPanel rules={rules} />

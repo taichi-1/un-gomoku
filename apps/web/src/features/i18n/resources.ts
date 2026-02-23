@@ -76,6 +76,8 @@ export const resources = {
         rule4: "配置に失敗するとターンが交代する",
       },
       header: {
+        toggleSfxMute: "効果音をミュート",
+        toggleSfxUnmute: "効果音ミュートを解除",
         toggleLanguage: "言語切替",
         toggleTheme: "ダークモード切替",
         info: "情報",
@@ -170,6 +172,8 @@ export const resources = {
         rule4: "Failed placement switches the turn",
       },
       header: {
+        toggleSfxMute: "Mute sound effects",
+        toggleSfxUnmute: "Unmute sound effects",
         toggleLanguage: "Toggle language",
         toggleTheme: "Toggle dark mode",
         info: "Information",

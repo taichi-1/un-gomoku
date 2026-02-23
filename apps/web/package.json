@@ -17,6 +17,7 @@
     "@tanstack/router-devtools": "^1.131.50",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "howler": "^2.2.4",
     "i18next": "^25.5.2",
     "jotai": "^2.15.0",
     "lucide-react": "^0.544.0",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.12",
     "@types/bun": "latest",
+    "@types/howler": "^2.2.12",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react-swc": "^4.0.1",
