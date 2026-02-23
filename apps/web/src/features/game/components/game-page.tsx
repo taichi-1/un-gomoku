@@ -11,8 +11,7 @@ import { resolveTurnIndicatorPlayer } from "@/features/game/lib/turn-indicator-p
 import type { GameController } from "@/features/game/types/game-session";
 
 const boardSizeStyle = {
-  "--board-size":
-    "clamp(220px, min(calc(100dvh - 290px), calc(100vw - 20px)), 760px)",
+  "--board-size": "clamp(220px, calc(100vw - 20px), 760px)",
 } as CSSProperties;
 
 interface GamePageProps {
@@ -68,12 +67,12 @@ export function GamePage({ controller }: GamePageProps) {
   });
 
   return (
-    <main className="h-dvh w-full overflow-hidden p-3 sm:p-4">
-      <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-3 sm:gap-4">
+    <main className="min-h-dvh w-full p-3 sm:p-4">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:gap-4">
         <AppHeader showBrand rules={rules} />
 
         <div
-          className="flex min-h-0 flex-1 flex-col items-center justify-start gap-3 pt-1.5 sm:justify-center sm:gap-6 sm:pt-0"
+          className="flex flex-col items-center gap-3 pt-1.5 sm:gap-6 sm:pt-0"
           style={boardSizeStyle}
         >
           <div

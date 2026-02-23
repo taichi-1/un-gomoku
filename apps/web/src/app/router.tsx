@@ -13,7 +13,7 @@ import { TitlePage } from "@/features/title/components/title-page";
 
 function RootLayout() {
   return (
-    <div className="relative h-dvh w-full overflow-hidden text-(--text-strong)">
+    <div className="relative min-h-dvh w-full text-(--text-strong)">
       <Outlet />
       {import.meta.env.DEV ? <TanStackRouterDevtools /> : null}
     </div>
