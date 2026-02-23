@@ -23,6 +23,9 @@ export const resources = {
         localStart: "対戦開始",
         localDescription: "近くの人と対戦",
         onlineDescription: "オンラインで友だちと対戦",
+        onlineInDevelopment: "開発中",
+        onlineDisabledMessage:
+          "現在オンライン対戦は開発中です。ローカル対戦をご利用ください。",
         createRoom: "ルーム作成",
         joinRoom: "ルーム参加",
         roomInputPlaceholder: "6桁のルームID",
@@ -119,6 +122,9 @@ export const resources = {
         localStart: "Start Match",
         localDescription: "Play together on one device",
         onlineDescription: "Play with friends online",
+        onlineInDevelopment: "In Development",
+        onlineDisabledMessage:
+          "Online match is currently in development. Please use local match.",
         createRoom: "Create Room",
         joinRoom: "Join Room",
         roomInputPlaceholder: "6-character room ID",

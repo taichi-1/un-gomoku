@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppHeader } from "@/components/app-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ONLINE_MATCH_ENABLED } from "@/features/title/constants";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
 
@@ -59,7 +61,7 @@ export function TitlePage() {
   const canJoin = ROOM_ID_PATTERN.test(normalizedRoomId);
 
   const handleJoin = (): void => {
-    if (!canJoin) {
+    if (!ONLINE_MATCH_ENABLED || !canJoin) {
       return;
     }
 
@@ -107,10 +109,17 @@ export function TitlePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={!ONLINE_MATCH_ENABLED ? "opacity-60" : undefined}>
             <CardHeader>
               <div className="flex flex-wrap items-end gap-2">
-                <CardTitle>{t("common.online")}</CardTitle>
+                <CardTitle>
+                  {!ONLINE_MATCH_ENABLED ? (
+                    <Badge variant="warning">
+                      {t("title.onlineInDevelopment")}
+                    </Badge>
+                  ) : null}
+                  {t("common.online")}
+                </CardTitle>
                 <CardDescription className="text-[11px] leading-none sm:text-xs">
                   {t("title.onlineDescription")}
                 </CardDescription>
@@ -121,8 +130,13 @@ export function TitlePage() {
                 type="button"
                 className="w-full"
                 variant="create"
-                onClick={() => createRoomMutation.mutate()}
-                disabled={createRoomMutation.isPending}
+                onClick={() => {
+                  if (!ONLINE_MATCH_ENABLED) {
+                    return;
+                  }
+                  createRoomMutation.mutate();
+                }}
+                disabled={!ONLINE_MATCH_ENABLED || createRoomMutation.isPending}
               >
                 {createRoomMutation.isPending
                   ? t("status.connecting")
@@ -136,24 +150,35 @@ export function TitlePage() {
                   placeholder={t("title.roomInputPlaceholder")}
                   className="uppercase"
                   inputMode="text"
+                  disabled={!ONLINE_MATCH_ENABLED}
                 />
                 <Button
                   type="button"
                   onClick={handleJoin}
-                  disabled={!canJoin}
-                  variant={canJoin ? "join" : "secondary"}
+                  disabled={!ONLINE_MATCH_ENABLED || !canJoin}
+                  variant={
+                    ONLINE_MATCH_ENABLED && canJoin ? "join" : "secondary"
+                  }
                 >
                   {t("title.joinRoom")}
                 </Button>
               </div>
 
-              {!canJoin && normalizedRoomId.length > 0 ? (
+              {!ONLINE_MATCH_ENABLED ? (
+                <p className="text-xs text-(--text-muted)">
+                  {t("title.onlineDisabledMessage")}
+                </p>
+              ) : null}
+
+              {ONLINE_MATCH_ENABLED &&
+              !canJoin &&
+              normalizedRoomId.length > 0 ? (
                 <p className="text-xs text-(--accent-gold-1)">
                   {t("game.invalidRoomId")}
                 </p>
               ) : null}
 
-              {createRoomMutation.error ? (
+              {ONLINE_MATCH_ENABLED && createRoomMutation.error ? (
                 <p className="text-xs text-(--accent-crimson-1)">
                   {createRoomMutation.error.message}
                 </p>
