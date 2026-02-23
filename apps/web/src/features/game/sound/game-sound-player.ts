@@ -217,6 +217,17 @@ export function playGameEnd(playKey?: string): void {
   playSoundById(gameSoundConfig.gameEndSoundId);
 }
 
+export function preloadAllGameSounds(): void {
+  if (!canUseAudioRuntime()) {
+    return;
+  }
+
+  const soundIds = Object.keys(gameSoundConfig.clips) as GameSoundId[];
+  for (const soundId of soundIds) {
+    void resolveHowl(soundId);
+  }
+}
+
 export function setGameSoundMuted(muted: boolean): void {
   isGameSoundMuted = muted;
   if (!canUseAudioRuntime()) {

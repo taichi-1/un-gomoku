@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppHeader } from "@/components/app-header";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { preloadAllGameSounds } from "@/features/game/sound/game-sound-player";
 import { ONLINE_MATCH_ENABLED } from "@/features/title/constants";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
@@ -30,6 +31,10 @@ export function TitlePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [joinRoomInput, setJoinRoomInput] = useState("");
+
+  useEffect(() => {
+    preloadAllGameSounds();
+  }, []);
   const rules = useMemo(
     () => [
       t("settings.rule1"),
