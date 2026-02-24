@@ -18,7 +18,7 @@ function createRecoverableFakeWebSocket(
   const sent: string[] = [];
   let attachment = initialAttachment;
   let closed = false;
-  let readyState = WebSocket.OPEN;
+  let readyState: number = WebSocket.OPEN;
   return {
     sent,
     get closed() {

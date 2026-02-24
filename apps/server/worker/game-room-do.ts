@@ -39,7 +39,7 @@ export class GameRoomDurableObject {
   private readonly loaded: Promise<void>;
 
   constructor(private readonly state: DurableObjectStateLike) {
-    this.runtime = {
+    const runtime: GameRoomRuntime = {
       state,
       room: createInitialRoom(),
       sockets: new Map(),
@@ -47,10 +47,11 @@ export class GameRoomDurableObject {
       expiresAt: null,
       updatedAt: Date.now(),
     };
+    this.runtime = runtime;
     this.loaded = (async () => {
-      await restoreFromStorage(this.runtime);
+      await restoreFromStorage(runtime);
       const sockets = this.state.getWebSockets?.() ?? [];
-      rehydrateRoomSockets(this.runtime, sockets);
+      rehydrateRoomSockets(runtime, sockets);
     })();
   }
 
