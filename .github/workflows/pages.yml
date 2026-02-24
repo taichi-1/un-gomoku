@@ -19,6 +19,8 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build web
+        env:
+          VITE_WS_URL: wss://un-gomoku-ws.taichi-1.workers.dev/ws # TODO: hard cording
         run: bun run --cwd apps/web build
 
       - name: Deploy to Cloudflare Pages
