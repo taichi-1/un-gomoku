@@ -1,10 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import type { ServerWebSocket } from "bun";
 import { handleWebSocketMessage } from "./server";
-import type { WebSocketData } from "./types";
+import type { GameSocket } from "./types";
 
 function createFakeWs(): {
-  ws: ServerWebSocket<WebSocketData>;
+  ws: GameSocket;
   sent: unknown[];
 } {
   const sent: unknown[] = [];
@@ -13,7 +12,7 @@ function createFakeWs(): {
     send: (data: string) => {
       sent.push(JSON.parse(data));
     },
-  } as unknown as ServerWebSocket<WebSocketData>;
+  } as GameSocket;
   return { ws, sent };
 }
 

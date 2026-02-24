@@ -1,6 +1,6 @@
 # @app/server
 
-Authoritative game server. Acts as the single source of truth for game state.
+Authoritative game server on Cloudflare Worker + Durable Object. Acts as the single source of truth for game state.
 
 ## Responsibilities
 

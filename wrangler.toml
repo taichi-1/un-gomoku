@@ -1,0 +1,12 @@
+name = "un-gomoku-ws"
+main = "apps/server/worker.ts"
+compatibility_date = "2026-02-24"
+
+[durable_objects]
+bindings = [
+  { name = "GAME_SERVER", class_name = "GameServerDurableObject" },
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameServerDurableObject"]

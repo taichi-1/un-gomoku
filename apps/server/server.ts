@@ -1,13 +1,11 @@
 import { WS_EVENTS } from "@pkg/shared/events";
 import { parseClientMessage } from "@pkg/shared/schemas";
-import type { ServerWebSocket } from "bun";
-import { handleDisconnect, routeMessage } from "./handlers";
-import { startRoomCleanup } from "./services";
-import type { WebSocketData } from "./types";
+import { routeMessage } from "./handlers";
+import type { GameSocket, WebSocketData } from "./types";
 import { sendMessage } from "./utils";
 
 export function handleWebSocketMessage(
-  ws: ServerWebSocket<WebSocketData>,
+  ws: GameSocket,
   message: string | ArrayBuffer | Uint8Array,
 ): void {
   let json: unknown;
@@ -42,40 +40,10 @@ export function handleWebSocketMessage(
   }
 }
 
-export function startServer(port = 3000) {
-  startRoomCleanup();
-  return Bun.serve<WebSocketData>({
-    port,
-    fetch(req, server) {
-      const url = new URL(req.url);
-
-      if (url.pathname === "/ws") {
-        const upgraded = server.upgrade(req, {
-          data: {
-            roomId: null,
-            playerId: null,
-            playerToken: null,
-          },
-        });
-        if (upgraded) {
-          return undefined;
-        }
-        return new Response("WebSocket upgrade failed", { status: 400 });
-      }
-
-      return new Response("un-gomoku server", { status: 200 });
-    },
-    websocket: {
-      open() {
-        console.log("Client connected");
-      },
-      message(ws, message) {
-        handleWebSocketMessage(ws, message);
-      },
-      close(ws) {
-        console.log("Client disconnected");
-        handleDisconnect(ws);
-      },
-    },
-  });
+export function createInitialSocketData(): WebSocketData {
+  return {
+    roomId: null,
+    playerId: null,
+    playerToken: null,
+  };
 }

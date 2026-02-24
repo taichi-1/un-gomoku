@@ -1,5 +1,4 @@
 import { WS_EVENTS } from "@pkg/shared/events";
-import type { ServerWebSocket } from "bun";
 import {
   createRoom,
   getOpponentPlayerId,
@@ -7,10 +6,10 @@ import {
   removePlayer,
   startGame,
 } from "../services";
-import type { WebSocketData } from "../types";
+import type { GameSocket } from "../types";
 import { broadcastToRoom, broadcastToRoomExcept, sendMessage } from "../utils";
 
-export function handleRoomCreate(ws: ServerWebSocket<WebSocketData>): void {
+export function handleRoomCreate(ws: GameSocket): void {
   const { roomId, playerId, playerToken } = createRoom(ws);
   sendMessage(ws, {
     event: WS_EVENTS.ROOM_CREATED,
@@ -21,7 +20,7 @@ export function handleRoomCreate(ws: ServerWebSocket<WebSocketData>): void {
 }
 
 export function handleRoomJoin(
-  ws: ServerWebSocket<WebSocketData>,
+  ws: GameSocket,
   roomId: string,
   playerToken?: string,
   random: () => number = Math.random,
@@ -69,7 +68,7 @@ export function handleRoomJoin(
   });
 }
 
-export function handleDisconnect(ws: ServerWebSocket<WebSocketData>): void {
+export function handleDisconnect(ws: GameSocket): void {
   const result = removePlayer(ws);
   if (!result) return;
   if (result.room.players.size > 0) {

@@ -1,9 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import type { ServerWebSocket } from "bun";
-import type { WebSocketData } from "../types";
+import type { GameSocket, WebSocketData } from "../types";
 import { createRoom, getRoom, joinRoom, removePlayer } from "./room.service";
 
-function createMockWs(): ServerWebSocket<WebSocketData> {
+function createMockWs(): GameSocket {
   const data: WebSocketData = {
     roomId: null,
     playerId: null,
@@ -11,8 +10,9 @@ function createMockWs(): ServerWebSocket<WebSocketData> {
   };
   return {
     data,
+    send: () => undefined,
     close: () => undefined,
-  } as unknown as ServerWebSocket<WebSocketData>;
+  };
 }
 
 describe("room.service", () => {
@@ -82,10 +82,11 @@ describe("room.service", () => {
         playerId: null,
         playerToken: null,
       } as WebSocketData,
+      send: () => undefined,
       close: () => {
         closed = true;
       },
-    } as unknown as ServerWebSocket<WebSocketData>;
+    } as GameSocket;
 
     const { roomId, playerToken } = createRoom(ws1);
     const wsReconnect = createMockWs();

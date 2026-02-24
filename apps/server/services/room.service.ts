@@ -1,7 +1,6 @@
 import { createInitialGameState, getNextPlayer } from "@pkg/core/game-state";
 import type { PlayerId } from "@pkg/shared/schemas";
-import type { ServerWebSocket } from "bun";
-import type { Room, WebSocketData } from "../types";
+import type { GameSocket, Room } from "../types";
 import { generatePlayerToken, generateRoomId } from "../utils";
 
 const rooms = new Map<string, Room>();
@@ -17,7 +16,12 @@ function cleanupRooms(now: number = Date.now()): void {
 
 export function startRoomCleanup(intervalMs = 60 * 1000): () => void {
   const timer = setInterval(() => cleanupRooms(), intervalMs);
-  if ("unref" in timer && typeof timer.unref === "function") {
+  if (
+    typeof timer === "object" &&
+    timer !== null &&
+    "unref" in timer &&
+    typeof timer.unref === "function"
+  ) {
     timer.unref();
   }
   return () => clearInterval(timer);
@@ -34,9 +38,7 @@ export interface CreateRoomResult {
   playerToken: string;
 }
 
-export function createRoom(
-  ws: ServerWebSocket<WebSocketData>,
-): CreateRoomResult {
+export function createRoom(ws: GameSocket): CreateRoomResult {
   cleanupRooms();
   const roomId = generateRoomId();
   const playerToken = generatePlayerToken();
@@ -71,7 +73,7 @@ export type JoinRoomResult =
     };
 
 export function joinRoom(
-  ws: ServerWebSocket<WebSocketData>,
+  ws: GameSocket,
   roomId: string,
   playerToken?: string,
 ): JoinRoomResult {
@@ -139,7 +141,7 @@ export function joinRoom(
 }
 
 export function removePlayer(
-  ws: ServerWebSocket<WebSocketData>,
+  ws: GameSocket,
 ): { room: Room; playerId: PlayerId } | null {
   const { roomId, playerId } = ws.data;
   if (!roomId || !playerId) return null;

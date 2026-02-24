@@ -3,7 +3,8 @@
   "private": true,
   "dependencies": {
     "@pkg/core": "workspace:*",
-    "@pkg/shared": "workspace:*"
+    "@pkg/shared": "workspace:*",
+    "hono": "^4.12.0"
   },
   "module": "index.ts",
   "type": "module",

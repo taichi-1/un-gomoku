@@ -1,15 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { placeStone } from "@pkg/core/board";
-import type { ServerWebSocket } from "bun";
 import { createRoom, getRoom, joinRoom } from "../services";
-import type { WebSocketData } from "../types";
+import type { GameSocket } from "../types";
 import {
   handleSubmitCandidates,
   handleUpdateCandidateDraft,
 } from "./game.handler";
 
 function createFakeWs(): {
-  ws: ServerWebSocket<WebSocketData>;
+  ws: GameSocket;
   sent: unknown[];
 } {
   const sent: unknown[] = [];
@@ -18,7 +17,7 @@ function createFakeWs(): {
     send: (data: string) => {
       sent.push(JSON.parse(data));
     },
-  } as unknown as ServerWebSocket<WebSocketData>;
+  } as GameSocket;
   return { ws, sent };
 }
 

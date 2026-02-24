@@ -11,7 +11,10 @@
     "lint:fix": "bunx biome check --write .",
     "format": "bunx biome format --write .",
     "typecheck": "bunx tsc --noEmit",
-    "dev:server": "bun --hot apps/server/index.ts",
+    "dev:server": "bun run dev:worker",
+    "dev:worker": "bunx wrangler dev --local --port 8787",
+    "deploy:worker": "bunx wrangler deploy",
+    "typegen:worker": "bunx wrangler types",
     "dev:web": "bun run --cwd apps/web dev",
     "build:web": "bun run --cwd apps/web build",
     "preview:web": "bun run --cwd apps/web preview"

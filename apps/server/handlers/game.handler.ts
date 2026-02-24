@@ -1,6 +1,5 @@
 import { WS_EVENTS } from "@pkg/shared/events";
 import type { Coordinate } from "@pkg/shared/schemas";
-import type { ServerWebSocket } from "bun";
 import {
   getRoom,
   processTurn,
@@ -8,11 +7,11 @@ import {
   validateDraftUpdateContext,
   validateTurnContext,
 } from "../services";
-import type { WebSocketData } from "../types";
+import type { GameSocket } from "../types";
 import { sendMessage } from "../utils";
 
 export function handleUpdateCandidateDraft(
-  ws: ServerWebSocket<WebSocketData>,
+  ws: GameSocket,
   candidates: Coordinate[],
 ): void {
   const room = getRoom(ws.data.roomId ?? "");
@@ -32,7 +31,7 @@ export function handleUpdateCandidateDraft(
 }
 
 export function handleSubmitCandidates(
-  ws: ServerWebSocket<WebSocketData>,
+  ws: GameSocket,
   candidates: Coordinate[],
 ): void {
   const room = getRoom(ws.data.roomId ?? "");

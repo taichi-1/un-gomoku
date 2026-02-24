@@ -1,4 +1,4 @@
-const FALLBACK_WS_ENDPOINT = "ws://localhost:3000/ws";
+const FALLBACK_WS_ENDPOINT = "ws://localhost:8787/ws";
 
 export function getWebSocketEndpoint(): string {
   const fromEnv = import.meta.env.VITE_WS_URL as string | undefined;

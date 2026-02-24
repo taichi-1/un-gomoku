@@ -1,1 +1,1 @@
-export const ONLINE_MATCH_ENABLED = false;
+export const ONLINE_MATCH_ENABLED = true;

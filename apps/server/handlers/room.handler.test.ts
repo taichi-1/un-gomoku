@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import type { ServerWebSocket } from "bun";
 import { getRoom, removePlayer } from "../services";
-import type { WebSocketData } from "../types";
+import type { GameSocket } from "../types";
 import { handleRoomCreate, handleRoomJoin } from "./room.handler";
 
 function createFakeWs(): {
-  ws: ServerWebSocket<WebSocketData>;
+  ws: GameSocket;
   sent: unknown[];
 } {
   const sent: unknown[] = [];
@@ -15,7 +14,7 @@ function createFakeWs(): {
       sent.push(JSON.parse(data));
     },
     close: () => undefined,
-  } as unknown as ServerWebSocket<WebSocketData>;
+  } as GameSocket;
   return { ws, sent };
 }
 

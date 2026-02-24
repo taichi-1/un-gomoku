@@ -21,7 +21,7 @@ A 2-player board game with probabilistic stone placement mechanics. Based on Gom
 ```text
 un-gomoku/
 ├── apps/
-│   ├── server/     # WebSocket server (port 3000)
+│   ├── server/     # Cloudflare Worker + Durable Object WebSocket server (port 8787 in local dev)
 │   └── web/        # React + Vite frontend (port 5173)
 ├── packages/
 │   ├── core/       # Game logic (pure functions)
@@ -39,8 +39,8 @@ bun install
 ## Development Commands
 
 ```bash
-# Start server (hot reload)
-bun run dev:server
+# Start Worker + Durable Object (local dev on port 8787)
+bun run dev:worker
 
 # Start web app (Vite)
 bun run dev:web
@@ -75,19 +75,29 @@ bun run typecheck
 
 ## How to Play
 
-1. Start the server: `bun run dev:server`
+1. Start the server: `bun run dev:worker`
 2. Start the web app: `bun run dev:web`
 3. Open `http://localhost:5173`
 4. Choose local match or online match from the title screen
 5. For online match, create a room or join from `/online/:roomId`
 
+### Online Match in Development
+
+- Set `VITE_ONLINE_MATCH_ENABLED=true` in `apps/web/.env.local`
+- Optional: set `VITE_WS_URL=ws://localhost:8787/ws` (default fallback already points here)
+
 ## Tech Stack
 
 - Runtime: Bun
 - Frontend: React, Vite, Tailwind CSS, TanStack Router/Query, Jotai, shadcn/ui
-- Server: `Bun.serve()` + WebSocket
+- Server: Cloudflare Worker + Durable Object + WebSocket (routing with Hono)
 - Linter/Formatter: Biome
 
 ## License
 
 MIT
+# Deploy Worker
+bun run deploy:worker
+
+# Generate worker types (optional)
+bun run typegen:worker
