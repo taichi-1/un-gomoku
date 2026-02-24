@@ -27,6 +27,10 @@ export function GamePage({ controller }: GamePageProps) {
     snapshot.selectedCandidates.length,
     snapshot.gameState.turnHistory.length,
   );
+  useCandidateSoundEffects(
+    snapshot.opponentCandidates.length,
+    snapshot.gameState.turnHistory.length,
+  );
 
   const rules = useMemo(
     () => [
