@@ -51,7 +51,7 @@ export function startOnlineConnection(
     if (!active) {
       return;
     }
-    ws = new WebSocket(getWebSocketEndpoint());
+    ws = new WebSocket(getWebSocketEndpoint(roomId));
     setSocket(ws);
 
     const sendJoinMessage = (token?: string): void => {

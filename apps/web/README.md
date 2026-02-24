@@ -22,3 +22,8 @@ bun run build:web
 # typecheck
 bun run typecheck
 ```
+
+## Online API Endpoint
+
+- `VITE_API_BASE_URL` can be set in `apps/web/.env.local`.
+- If not set, the app uses the current page origin.

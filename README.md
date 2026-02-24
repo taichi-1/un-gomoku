@@ -83,8 +83,9 @@ bun run typecheck
 
 ### Online Match in Development
 
-- Set `VITE_ONLINE_MATCH_ENABLED=true` in `apps/web/.env.local`
-- Optional: set `VITE_WS_URL=ws://localhost:8787/ws` (default fallback already points here)
+- Optional: set `VITE_API_BASE_URL` in `apps/web/.env.local` (default: browser origin)
+- Room creation uses `POST /rooms`
+- Online game connection uses `GET /ws/:roomId`
 
 ## Tech Stack
 
@@ -96,8 +97,12 @@ bun run typecheck
 ## License
 
 MIT
-# Deploy Worker
+
+## Deploy Worker
+
+```bash
 bun run deploy:worker
 
 # Generate worker types (optional)
 bun run typegen:worker
+```

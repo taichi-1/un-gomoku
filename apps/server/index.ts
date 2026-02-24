@@ -1,1 +1,1 @@
-export { default, GameServerDurableObject } from "./worker";
+export { default, GameRoomDurableObject } from "./worker";

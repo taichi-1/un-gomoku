@@ -41,16 +41,6 @@ describe("CoordinateSchema", () => {
 });
 
 describe("parseClientMessage", () => {
-  describe("room.create", () => {
-    test("should parse valid room.create message", () => {
-      const result = parseClientMessage({ event: "room.create" });
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.output.event).toBe("room.create");
-      }
-    });
-  });
-
   describe("room.join", () => {
     test("should parse valid room.join message", () => {
       const result = parseClientMessage({

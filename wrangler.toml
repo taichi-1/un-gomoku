@@ -4,9 +4,14 @@ compatibility_date = "2026-02-24"
 
 [durable_objects]
 bindings = [
-  { name = "GAME_SERVER", class_name = "GameServerDurableObject" },
+  { name = "GAME_ROOM", class_name = "GameRoomDurableObject" },
 ]
 
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["GameServerDurableObject"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["GameRoomDurableObject"]
+deleted_classes = ["GameServerDurableObject"]

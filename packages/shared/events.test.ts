@@ -3,7 +3,6 @@ import { WS_EVENTS } from "./events";
 
 describe("WS_EVENTS", () => {
   test("should have all client events", () => {
-    expect(WS_EVENTS.ROOM_CREATE).toBe("room.create");
     expect(WS_EVENTS.ROOM_JOIN).toBe("room.join");
     expect(WS_EVENTS.GAME_UPDATE_CANDIDATE_DRAFT).toBe(
       "game.updateCandidateDraft",
@@ -12,7 +11,6 @@ describe("WS_EVENTS", () => {
   });
 
   test("should have all server events", () => {
-    expect(WS_EVENTS.ROOM_CREATED).toBe("room.created");
     expect(WS_EVENTS.ROOM_JOINED).toBe("room.joined");
     expect(WS_EVENTS.ROOM_ERROR).toBe("room.error");
     expect(WS_EVENTS.ROOM_OPPONENT_OFFLINE).toBe("room.opponentOffline");

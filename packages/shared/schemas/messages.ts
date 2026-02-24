@@ -6,11 +6,6 @@ import { CoordinateSchema, PlayerIdSchema } from "./primitives";
 
 // ===== Client -> Server Message Schemas =====
 
-/** Schema for room.create event payload */
-export const RoomCreatePayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.ROOM_CREATE),
-});
-
 /** Schema for room.join event payload */
 export const RoomJoinPayloadSchema = v.object({
   event: v.literal(WS_EVENTS.ROOM_JOIN),
@@ -36,21 +31,12 @@ export const UpdateCandidateDraftPayloadSchema = v.object({
 
 /** Schema for all client messages (variant discriminated by event field) */
 export const ClientMessageSchema = v.variant("event", [
-  RoomCreatePayloadSchema,
   RoomJoinPayloadSchema,
   UpdateCandidateDraftPayloadSchema,
   SubmitCandidatesPayloadSchema,
 ]);
 
 // ===== Server -> Client Message Schemas =====
-
-/** Schema for room.created event payload */
-export const RoomCreatedPayloadSchema = v.object({
-  event: v.literal(WS_EVENTS.ROOM_CREATED),
-  roomId: v.string(),
-  playerId: PlayerIdSchema,
-  playerToken: v.string(),
-});
 
 /** Schema for room.joined event payload */
 export const RoomJoinedPayloadSchema = v.object({
@@ -112,7 +98,6 @@ export const GameErrorPayloadSchema = v.object({
 
 /** Schema for all server messages (variant discriminated by event field) */
 export const ServerMessageSchema = v.variant("event", [
-  RoomCreatedPayloadSchema,
   RoomJoinedPayloadSchema,
   RoomErrorPayloadSchema,
   RoomOpponentOfflinePayloadSchema,
@@ -125,9 +110,6 @@ export const ServerMessageSchema = v.variant("event", [
 ]);
 
 // ===== Inferred Types =====
-
-/** Room create payload type */
-export type RoomCreatePayload = v.InferOutput<typeof RoomCreatePayloadSchema>;
 
 /** Room join payload type */
 export type RoomJoinPayload = v.InferOutput<typeof RoomJoinPayloadSchema>;
@@ -144,9 +126,6 @@ export type UpdateCandidateDraftPayload = v.InferOutput<
 
 /** Client message type (union of all client payloads) */
 export type ClientMessage = v.InferOutput<typeof ClientMessageSchema>;
-
-/** Room created payload type */
-export type RoomCreatedPayload = v.InferOutput<typeof RoomCreatedPayloadSchema>;
 
 /** Room joined payload type */
 export type RoomJoinedPayload = v.InferOutput<typeof RoomJoinedPayloadSchema>;

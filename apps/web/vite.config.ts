@@ -8,6 +8,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      "/rooms": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+      },
       "/ws": {
         target: "ws://localhost:8787",
         ws: true,
