@@ -87,6 +87,25 @@ describe("room-socket-handlers", () => {
     expect(ws.closed).toBe(true);
   });
 
+  test("does not close socket when message rate is below threshold", async () => {
+    const { runtime } = createTestRuntime();
+    const ws = createFakeWebSocket();
+    const socket = createSocketAdapter(ws);
+    runtime.sockets.set(ws, {
+      socket,
+      receivedAt: Array.from({ length: RATE_LIMIT_COUNT - 1 }, () =>
+        Date.now(),
+      ),
+    });
+
+    await handleSocketMessage(runtime, ws, "{}");
+
+    const message = parseLastSent(ws);
+    expect(message.event).toBe("game.error");
+    expect(message.message).not.toBe("Rate limit exceeded");
+    expect(ws.closed).toBe(false);
+  });
+
   test("reconnect with same token replaces existing player socket", async () => {
     const { runtime } = createTestRuntime();
     runtime.roomExists = true;

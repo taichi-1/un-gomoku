@@ -10,7 +10,7 @@ interface TurnIndicatorProps {
   displayPlayerId: PlayerId;
 }
 
-function resolveTurnIndicatorDisplay({
+export function resolveTurnIndicatorDisplay({
   snapshot,
   showFinishedResult,
   displayPlayerId,
@@ -28,6 +28,43 @@ function resolveTurnIndicatorDisplay({
   const winner = gameState.winner;
   const isFinished = gameState.phase === "finished" && showFinishedResult;
 
+  if (snapshot.mode === "online") {
+    if (snapshot.status === "error") {
+      return {
+        label: snapshot.statusMessage ?? t("status.error"),
+        indicatorStonePlayer: null,
+      };
+    }
+
+    if (snapshot.status === "disconnected") {
+      return {
+        label: snapshot.statusMessage ?? t("status.disconnected"),
+        indicatorStonePlayer: null,
+      };
+    }
+
+    if (snapshot.status === "connecting") {
+      return {
+        label: snapshot.statusMessage ?? t("status.connecting"),
+        indicatorStonePlayer: null,
+      };
+    }
+
+    if (snapshot.status === "waiting") {
+      return {
+        label: snapshot.statusMessage ?? t("status.waiting"),
+        indicatorStonePlayer: null,
+      };
+    }
+
+    if (snapshot.status === "opponentOffline") {
+      return {
+        label: snapshot.statusMessage ?? t("status.opponentOffline"),
+        indicatorStonePlayer: null,
+      };
+    }
+  }
+
   if (isFinished) {
     if (!winner || gameState.isDraw) {
       return {
@@ -40,20 +77,6 @@ function resolveTurnIndicatorDisplay({
         player: t(`common.player.${winner}`),
       }),
       indicatorStonePlayer: winner,
-    };
-  }
-
-  if (snapshot.mode === "online" && snapshot.status === "waiting") {
-    return {
-      label: t("status.waiting"),
-      indicatorStonePlayer: null,
-    };
-  }
-
-  if (snapshot.mode === "online" && snapshot.status === "opponentOffline") {
-    return {
-      label: t("status.opponentOffline"),
-      indicatorStonePlayer: null,
     };
   }
 

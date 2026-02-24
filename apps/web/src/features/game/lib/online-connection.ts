@@ -16,6 +16,8 @@ interface StartOnlineConnectionOptions {
   setSnapshot: SnapshotSetter;
   setSocket: (socket: WebSocket | null) => void;
   roomFullRetryDelayMs?: number;
+  reconnectInitialDelayMs?: number;
+  reconnectMaxDelayMs?: number;
   scheduleTimeout?: (
     callback: () => void,
     delayMs: number,
@@ -27,17 +29,21 @@ export function startOnlineConnection(
 ): () => void {
   const { roomId, setSnapshot, setSocket } = options;
   const roomFullRetryDelayMs = options.roomFullRetryDelayMs ?? 150;
+  const reconnectInitialDelayMs = options.reconnectInitialDelayMs ?? 400;
+  const reconnectMaxDelayMs = options.reconnectMaxDelayMs ?? 5000;
   const scheduleTimeout =
     options.scheduleTimeout ??
     ((callback: () => void, delayMs: number) => setTimeout(callback, delayMs));
   let active = true;
   let ws: WebSocket | null = null;
+  let reconnectDelayMs = reconnectInitialDelayMs;
 
   const auth = getRoomAuth(roomId);
   let joinToken: string | undefined = auth?.playerToken;
   let retriedWithoutToken = false;
   let retriedAfterRoomFull = false;
   let roomFullRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   const clearRoomFullRetryTimer = (): void => {
     if (!roomFullRetryTimer) {
@@ -47,38 +53,71 @@ export function startOnlineConnection(
     roomFullRetryTimer = null;
   };
 
-  const initTimeoutId = scheduleTimeout(() => {
-    if (!active) {
+  const clearReconnectTimer = (): void => {
+    if (!reconnectTimer) {
       return;
     }
-    ws = new WebSocket(getWebSocketEndpoint(roomId));
-    setSocket(ws);
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  };
 
-    const sendJoinMessage = (token?: string): void => {
-      ws?.send(
-        JSON.stringify({
-          event: WS_EVENTS.ROOM_JOIN,
-          roomId,
-          ...(token ? { playerToken: token } : {}),
-        }),
-      );
-    };
+  const setConnectingSnapshot = (): void => {
+    setSnapshot((current) => ({
+      ...current,
+      status: "connecting",
+      statusMessage: null,
+    }));
+  };
 
-    ws.onopen = () => {
+  const scheduleReconnect = (): void => {
+    if (!active || reconnectTimer) {
+      return;
+    }
+    setConnectingSnapshot();
+    const delayMs = reconnectDelayMs;
+    reconnectDelayMs = Math.min(reconnectDelayMs * 2, reconnectMaxDelayMs);
+    reconnectTimer = scheduleTimeout(() => {
+      reconnectTimer = null;
       if (!active) {
         return;
       }
+      connect();
+    }, delayMs);
+  };
 
-      setSnapshot((current) => ({
-        ...current,
-        status: "connecting",
-        statusMessage: null,
-      }));
-      sendJoinMessage(joinToken);
+  const sendJoinMessage = (socket: WebSocket, playerToken?: string): void => {
+    if (socket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    socket.send(
+      JSON.stringify({
+        event: WS_EVENTS.ROOM_JOIN,
+        roomId,
+        ...(playerToken ? { playerToken } : {}),
+      }),
+    );
+  };
+
+  const connect = (): void => {
+    if (!active) {
+      return;
+    }
+    clearRoomFullRetryTimer();
+
+    const socket = new WebSocket(getWebSocketEndpoint(roomId));
+    ws = socket;
+    setSocket(socket);
+
+    socket.onopen = () => {
+      if (!active || ws !== socket) {
+        return;
+      }
+      setConnectingSnapshot();
+      sendJoinMessage(socket, joinToken);
     };
 
-    ws.onmessage = (event) => {
-      if (!active) {
+    socket.onmessage = (event) => {
+      if (!active || ws !== socket) {
         return;
       }
 
@@ -97,6 +136,10 @@ export function startOnlineConnection(
       const message = parsed.output;
 
       if (message.event === WS_EVENTS.ROOM_JOINED) {
+        reconnectDelayMs = reconnectInitialDelayMs;
+        clearReconnectTimer();
+        retriedAfterRoomFull = false;
+        joinToken = message.playerToken;
         saveRoomAuth(message.roomId, {
           playerId: message.playerId,
           playerToken: message.playerToken,
@@ -123,7 +166,7 @@ export function startOnlineConnection(
           clearRoomAuth(roomId);
           joinToken = undefined;
           retriedWithoutToken = true;
-          sendJoinMessage(undefined);
+          sendJoinMessage(socket, undefined);
           return;
         }
         if (
@@ -134,10 +177,14 @@ export function startOnlineConnection(
           retriedAfterRoomFull = true;
           clearRoomFullRetryTimer();
           roomFullRetryTimer = scheduleTimeout(() => {
-            if (!active || ws?.readyState !== WebSocket.OPEN) {
+            if (
+              !active ||
+              ws !== socket ||
+              socket.readyState !== WebSocket.OPEN
+            ) {
               return;
             }
-            sendJoinMessage(joinToken);
+            sendJoinMessage(socket, joinToken);
           }, roomFullRetryDelayMs);
           return;
         }
@@ -153,8 +200,8 @@ export function startOnlineConnection(
       applyOnlineServerMessage(message, setSnapshot);
     };
 
-    ws.onerror = () => {
-      if (!active) {
+    socket.onerror = () => {
+      if (!active || ws !== socket) {
         return;
       }
       setSnapshot((current) => ({
@@ -164,32 +211,33 @@ export function startOnlineConnection(
       }));
     };
 
-    ws.onclose = () => {
+    socket.onclose = () => {
+      if (ws !== socket) {
+        return;
+      }
       clearRoomFullRetryTimer();
+      ws = null;
       setSocket(null);
       if (!active) {
         return;
       }
-
-      setSnapshot((current) => {
-        if (current.status === "error") {
-          return current;
-        }
-
-        return {
-          ...current,
-          status: "disconnected",
-        };
-      });
+      scheduleReconnect();
     };
+  };
+
+  const initTimeoutId = scheduleTimeout(() => {
+    connect();
   }, 0);
 
   return () => {
     active = false;
     clearTimeout(initTimeoutId);
     clearRoomFullRetryTimer();
+    clearReconnectTimer();
     if (ws) {
-      ws.close();
+      const socket = ws;
+      ws = null;
+      socket.close();
       setSocket(null);
     }
   };

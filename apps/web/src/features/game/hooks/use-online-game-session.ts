@@ -5,6 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { gameSessionQueryKey } from "@/app/query-keys";
 import { applyCandidateSelection } from "@/features/game/lib/candidate";
+import {
+  createDraftSyncThrottle,
+  type DraftSyncThrottle,
+} from "@/features/game/lib/draft-sync-throttle";
 import { startOnlineConnection } from "@/features/game/lib/online-connection";
 import {
   canInteractOnlineSnapshot,
@@ -16,6 +20,8 @@ import type {
   GameSessionSnapshot,
 } from "@/features/game/types/game-session";
 
+const DRAFT_SYNC_INTERVAL_MS = 100;
+
 export function useOnlineGameSession(rawRoomId: string): GameController {
   const roomId = useMemo(() => normalizeRoomId(rawRoomId), [rawRoomId]);
   const queryKey = useMemo(
@@ -25,6 +31,7 @@ export function useOnlineGameSession(rawRoomId: string): GameController {
 
   const queryClient = useQueryClient();
   const wsRef = useRef<WebSocket | null>(null);
+  const draftSyncRef = useRef<DraftSyncThrottle | null>(null);
 
   const { data: snapshot } = useQuery({
     queryKey,
@@ -52,6 +59,24 @@ export function useOnlineGameSession(rawRoomId: string): GameController {
     ws.send(JSON.stringify(payload));
     return true;
   }, []);
+
+  useEffect(() => {
+    const draftSync = createDraftSyncThrottle({
+      intervalMs: DRAFT_SYNC_INTERVAL_MS,
+      send: (candidates) =>
+        sendMessage({
+          event: WS_EVENTS.GAME_UPDATE_CANDIDATE_DRAFT,
+          candidates,
+        }),
+    });
+    draftSyncRef.current = draftSync;
+    return () => {
+      draftSync.dispose();
+      if (draftSyncRef.current === draftSync) {
+        draftSyncRef.current = null;
+      }
+    };
+  }, [sendMessage]);
 
   useEffect(() => {
     return startOnlineConnection({
@@ -97,10 +122,16 @@ export function useOnlineGameSession(rawRoomId: string): GameController {
         return;
       }
 
-      sendMessage({
-        event: WS_EVENTS.GAME_UPDATE_CANDIDATE_DRAFT,
-        candidates: nextCandidates,
-      });
+      const draftSync = draftSyncRef.current;
+      if (!draftSync) {
+        sendMessage({
+          event: WS_EVENTS.GAME_UPDATE_CANDIDATE_DRAFT,
+          candidates: nextCandidates,
+        });
+        return;
+      }
+
+      draftSync.enqueue(nextCandidates);
     },
     [sendMessage, setSnapshot],
   );
@@ -116,6 +147,7 @@ export function useOnlineGameSession(rawRoomId: string): GameController {
       return;
     }
 
+    draftSyncRef.current?.flush();
     const sent = sendMessage({
       event: WS_EVENTS.GAME_SUBMIT_CANDIDATES,
       candidates: current.selectedCandidates,
@@ -124,7 +156,7 @@ export function useOnlineGameSession(rawRoomId: string): GameController {
       setSnapshot((prev) => ({
         ...prev,
         status: "error",
-        statusMessage: "Connection lost. Please refresh the page.",
+        statusMessage: "Connection lost. Reconnecting...",
       }));
     }
   }, [queryClient, queryKey, sendMessage, setSnapshot, snapshot]);
