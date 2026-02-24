@@ -29,15 +29,22 @@ export class FakeDurableObjectStorage {
   }
 }
 
-export function createTestRuntime(): {
+interface CreateTestRuntimeOptions {
+  storage?: FakeDurableObjectStorage;
+  webSockets?: WebSocket[];
+}
+
+export function createTestRuntime(options: CreateTestRuntimeOptions = {}): {
   runtime: GameRoomRuntime;
   storage: FakeDurableObjectStorage;
 } {
-  const storage = new FakeDurableObjectStorage();
+  const storage = options.storage ?? new FakeDurableObjectStorage();
+  const webSockets = options.webSockets ?? [];
   const runtime: GameRoomRuntime = {
     state: {
       storage,
       acceptWebSocket: () => undefined,
+      getWebSockets: () => webSockets,
     },
     room: {
       id: "",

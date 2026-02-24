@@ -111,6 +111,7 @@ export async function handleRoomJoin(
       existingWs.data.roomId = null;
       existingWs.data.playerId = null;
       existingWs.data.playerToken = null;
+      existingWs.clearAttachment();
       existingWs.close?.();
     }
 
@@ -118,6 +119,11 @@ export async function handleRoomJoin(
     ws.data.roomId = roomId;
     ws.data.playerId = reconnectPlayerId;
     ws.data.playerToken = playerToken;
+    ws.setAttachment({
+      roomId,
+      playerId: reconnectPlayerId,
+      playerToken,
+    });
     await clearExpiry(runtime);
     await persistRoomState(runtime);
 
@@ -177,6 +183,11 @@ export async function handleRoomJoin(
   ws.data.roomId = roomId;
   ws.data.playerId = "player2";
   ws.data.playerToken = token;
+  ws.setAttachment({
+    roomId,
+    playerId: "player2",
+    playerToken: token,
+  });
   await clearExpiry(runtime);
 
   sendMessage(ws, {

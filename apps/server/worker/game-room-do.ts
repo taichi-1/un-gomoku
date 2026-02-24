@@ -6,6 +6,7 @@ import {
   handleSocketClosed,
   handleSocketMessage,
 } from "./room-socket-handlers";
+import { rehydrateRoomSockets } from "./room-socket-recovery";
 import { handleAlarm, restoreFromStorage } from "./room-storage";
 import {
   isValidRoomId,
@@ -46,7 +47,11 @@ export class GameRoomDurableObject {
       expiresAt: null,
       updatedAt: Date.now(),
     };
-    this.loaded = restoreFromStorage(this.runtime);
+    this.loaded = (async () => {
+      await restoreFromStorage(this.runtime);
+      const sockets = this.state.getWebSockets?.() ?? [];
+      rehydrateRoomSockets(this.runtime, sockets);
+    })();
   }
 
   async fetch(request: Request): Promise<Response> {

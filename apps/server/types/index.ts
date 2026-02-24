@@ -6,10 +6,19 @@ export interface WebSocketData {
   playerToken: string | null;
 }
 
+export interface SocketAttachment {
+  roomId: string;
+  playerId: PlayerId;
+  playerToken: string;
+}
+
 export interface GameSocket {
   data: WebSocketData;
   send(data: string): void;
   close?: () => void;
+  getAttachment(): SocketAttachment | null;
+  setAttachment(attachment: SocketAttachment): void;
+  clearAttachment(): void;
 }
 
 export interface Room {

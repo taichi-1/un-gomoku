@@ -23,6 +23,7 @@ export interface DurableObjectStorageLike {
 export interface DurableObjectStateLike {
   storage: DurableObjectStorageLike;
   acceptWebSocket(socket: WebSocket): void;
+  getWebSockets?: () => WebSocket[];
 }
 
 export interface WorkerBindings {

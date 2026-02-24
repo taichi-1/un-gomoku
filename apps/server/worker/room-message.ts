@@ -18,12 +18,26 @@ import { handleRoomJoin } from "./room-join";
 import { persistRoomState, scheduleExpiry } from "./room-storage";
 import { createInitialSocketData, getMessageSizeBytes } from "./room-utils";
 import type { GameRoomRuntime } from "./runtime-types";
+import {
+  readSocketAttachment,
+  writeSocketAttachment,
+} from "./socket-attachment";
 
 export function createSocketAdapter(ws: WebSocket): GameSocket {
+  let fallbackAttachment = readSocketAttachment(ws);
   return {
     data: createInitialSocketData(),
     send: (data: string) => ws.send(data),
     close: () => ws.close(),
+    getAttachment: () => readSocketAttachment(ws) ?? fallbackAttachment,
+    setAttachment: (attachment) => {
+      fallbackAttachment = attachment;
+      writeSocketAttachment(ws, attachment);
+    },
+    clearAttachment: () => {
+      fallbackAttachment = null;
+      writeSocketAttachment(ws, null);
+    },
   };
 }
 
@@ -171,28 +185,27 @@ export async function handleSocketClosed(
 
   const roomId = session.socket.data.roomId;
   const playerId = session.socket.data.playerId;
-  if (!roomId || !playerId || !runtime.roomExists) {
-    return;
-  }
-
-  const currentWs = runtime.room.players.get(playerId);
-  if (currentWs === session.socket) {
-    runtime.room.players.delete(playerId);
-    if (runtime.room.players.size === 0) {
-      await scheduleExpiry(runtime);
-    } else {
-      const message = JSON.stringify({
-        event: WS_EVENTS.ROOM_OPPONENT_OFFLINE,
-        playerId,
-      });
-      for (const playerSocket of runtime.room.players.values()) {
-        playerSocket.send(message);
+  if (roomId && playerId && runtime.roomExists) {
+    const currentWs = runtime.room.players.get(playerId);
+    if (currentWs === session.socket) {
+      runtime.room.players.delete(playerId);
+      if (runtime.room.players.size === 0) {
+        await scheduleExpiry(runtime);
+      } else {
+        const message = JSON.stringify({
+          event: WS_EVENTS.ROOM_OPPONENT_OFFLINE,
+          playerId,
+        });
+        for (const playerSocket of runtime.room.players.values()) {
+          playerSocket.send(message);
+        }
       }
+      await persistRoomState(runtime);
     }
-    await persistRoomState(runtime);
   }
 
   session.socket.data.roomId = null;
   session.socket.data.playerId = null;
   session.socket.data.playerToken = null;
+  session.socket.clearAttachment();
 }
