@@ -75,8 +75,17 @@ export function GamePage({ controller }: GamePageProps) {
     hasActiveFx: activeFx !== null,
     hasPendingTurnHistorySync,
   });
+  const isOnlineOpponentTurn =
+    snapshot.mode === "online" &&
+    snapshot.myPlayerId !== null &&
+    snapshot.gameState.currentPlayer !== snapshot.myPlayerId;
+
+  const currentCandidateCount = isOnlineOpponentTurn
+    ? snapshot.opponentCandidates.length
+    : snapshot.selectedCandidates.length;
+
   const displaySelectedCount = resolvePlayingInfoCandidateCount({
-    currentCandidateCount: snapshot.selectedCandidates.length,
+    currentCandidateCount,
     lastTurnCandidateCount:
       snapshot.gameState.turnHistory.at(-1)?.candidates.length ?? null,
     hasActiveFx: activeFx !== null,
