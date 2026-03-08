@@ -12,6 +12,7 @@ export function createInitialGameState(): GameStateDTO {
   return {
     board: createEmptyBoard(),
     currentPlayer: "player1",
+    blackPlayer: "player1",
     phase: "waiting",
     winner: null,
     isDraw: false,

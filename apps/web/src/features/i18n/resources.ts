@@ -16,6 +16,10 @@ export const resources = {
           player1: "黒",
           player2: "白",
         },
+        stone: {
+          black: "黒",
+          white: "白",
+        },
       },
       title: {
         heading: "un-gomoku",
@@ -115,6 +119,10 @@ export const resources = {
         player: {
           player1: "Black",
           player2: "White",
+        },
+        stone: {
+          black: "Black",
+          white: "White",
         },
       },
       title: {

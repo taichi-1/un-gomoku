@@ -7,16 +7,18 @@ type StoneTone = "solid" | "preview";
 
 interface StoneIconProps {
   playerId: PlayerId;
+  blackPlayer?: PlayerId;
   className?: string;
   tone?: StoneTone;
 }
 
 export function StoneIcon({
   playerId,
+  blackPlayer = "player1",
   className,
   tone = "solid",
 }: StoneIconProps) {
-  const isBlackStone = playerId === "player1";
+  const isBlackStone = playerId === blackPlayer;
   const isPreview = tone === "preview";
 
   const strokeColor = isBlackStone
@@ -96,6 +98,7 @@ export function StoneIcon({
 
 interface NumberedStoneIconProps {
   playerId: PlayerId;
+  blackPlayer?: PlayerId;
   number: number;
   className?: string;
   stoneClassName?: string;
@@ -106,6 +109,7 @@ interface NumberedStoneIconProps {
 
 export function NumberedStoneIcon({
   playerId,
+  blackPlayer = "player1",
   number,
   className,
   stoneClassName,
@@ -114,7 +118,7 @@ export function NumberedStoneIcon({
   tone = "preview",
 }: NumberedStoneIconProps) {
   const numberColorClass =
-    playerId === "player1"
+    playerId === blackPlayer
       ? "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.65)]"
       : "text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.42)]";
 
@@ -125,7 +129,12 @@ export function NumberedStoneIcon({
         className,
       )}
     >
-      <StoneIcon playerId={playerId} tone={tone} className={stoneClassName} />
+      <StoneIcon
+        playerId={playerId}
+        blackPlayer={blackPlayer}
+        tone={tone}
+        className={stoneClassName}
+      />
       <span
         className={cn(
           "pointer-events-none absolute select-none font-semibold leading-none",

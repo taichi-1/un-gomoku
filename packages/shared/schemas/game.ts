@@ -22,6 +22,7 @@ export const TurnResultDTOSchema = v.object({
 export const GameStateDTOSchema = v.object({
   board: BoardStateSchema,
   currentPlayer: PlayerIdSchema,
+  blackPlayer: PlayerIdSchema,
   phase: GamePhaseSchema,
   winner: v.nullable(PlayerIdSchema),
   isDraw: v.boolean(),

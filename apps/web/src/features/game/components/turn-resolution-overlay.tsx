@@ -1,4 +1,5 @@
 import { BOARD_SIZE } from "@pkg/shared/constants";
+import type { PlayerId } from "@pkg/shared/schemas";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { NumberedStoneIcon } from "@/features/game/components/stone-icon";
@@ -27,6 +28,7 @@ interface TurnResolutionOverlayProps {
   phase: TurnResolutionFxPhase;
   onPhaseComplete: (phase: Exclude<TurnResolutionFxPhase, "idle">) => void;
   reducedMotionOverride?: boolean;
+  blackPlayer?: PlayerId;
 }
 
 interface SequenceLayerProps {
@@ -39,6 +41,7 @@ interface FinalLayerProps {
   activeFx: ActiveTurnResolutionFx;
   spec: TurnResolutionDisplaySpec;
   reducedMotion: boolean;
+  blackPlayer: PlayerId;
 }
 
 const GRID_STYLE = {
@@ -128,9 +131,14 @@ function SequenceLayer({ activeFx, spec, activeStep }: SequenceLayerProps) {
   );
 }
 
-function FinalLayer({ activeFx, spec, reducedMotion }: FinalLayerProps) {
+function FinalLayer({
+  activeFx,
+  spec,
+  reducedMotion,
+  blackPlayer,
+}: FinalLayerProps) {
   const finalCandidates = getFinalOverlayCandidates(activeFx);
-  const isBlackPlayerResult = activeFx.result.player === "player1";
+  const isBlackPlayerResult = activeFx.result.player === blackPlayer;
   const failHaloGradient = isBlackPlayerResult
     ? "radial-gradient(circle at center, rgba(82,94,113,0.3) 0%, rgba(82,94,113,0.14) 60%, rgba(82,94,113,0) 100%)"
     : "radial-gradient(circle at center, rgba(94,104,119,0.22) 0%, rgba(94,104,119,0.08) 60%, rgba(94,104,119,0) 100%)";
@@ -225,6 +233,7 @@ export function TurnResolutionOverlay({
   phase,
   onPhaseComplete,
   reducedMotionOverride,
+  blackPlayer = "player1",
 }: TurnResolutionOverlayProps) {
   const reducedMotionFromOS = useReducedMotion();
   const reducedMotion = reducedMotionOverride ?? reducedMotionFromOS ?? false;
@@ -342,6 +351,7 @@ export function TurnResolutionOverlay({
             activeFx={activeFx}
             reducedMotion={reducedMotion}
             spec={displaySpec}
+            blackPlayer={blackPlayer}
           />
         ) : null}
       </AnimatePresence>
