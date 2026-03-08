@@ -7,8 +7,10 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { GamePage } from "@/features/game/components/game-page";
+import { useCpuGameSession } from "@/features/game/hooks/use-cpu-game-session";
 import { useLocalGameSession } from "@/features/game/hooks/use-local-game-session";
 import { useOnlineGameSession } from "@/features/game/hooks/use-online-game-session";
+import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/cpu";
 import { TitlePage } from "@/features/title/components/title-page";
 
 function RootLayout() {
@@ -22,6 +24,15 @@ function RootLayout() {
 
 function LocalGameRouteComponent() {
   const controller = useLocalGameSession();
+  return <GamePage controller={controller} />;
+}
+
+const VALID_DIFFICULTIES = new Set<string>(["easy", "medium", "hard"]);
+const VALID_TURN_ORDERS = new Set<string>(["first", "second", "random"]);
+
+function CpuGameRouteComponent() {
+  const { difficulty, turnOrder } = cpuRoute.useSearch();
+  const controller = useCpuGameSession(difficulty, turnOrder);
   return <GamePage controller={controller} />;
 }
 
@@ -47,13 +58,34 @@ const localRoute = createRoute({
   component: LocalGameRouteComponent,
 });
 
+const cpuRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/cpu",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { difficulty: CpuDifficulty; turnOrder: CpuTurnOrder } => {
+    const d = String(search.difficulty ?? "easy");
+    const t = String(search.turnOrder ?? "random");
+    return {
+      difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "easy",
+      turnOrder: VALID_TURN_ORDERS.has(t) ? (t as CpuTurnOrder) : "random",
+    };
+  },
+  component: CpuGameRouteComponent,
+});
+
 const onlineRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/online/$roomId",
   component: OnlineGameRouteComponent,
 });
 
-const routeTree = rootRoute.addChildren([titleRoute, localRoute, onlineRoute]);
+const routeTree = rootRoute.addChildren([
+  titleRoute,
+  localRoute,
+  cpuRoute,
+  onlineRoute,
+]);
 
 export const router = createRouter({
   routeTree,

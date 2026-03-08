@@ -12,9 +12,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/cpu";
 import { preloadAllGameSounds } from "@/features/game/sound/game-sound-player";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
+
 
 const ROOM_ID_PATTERN = /^[A-Z0-9]{6}$/;
 
@@ -29,6 +38,8 @@ export function TitlePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [joinRoomInput, setJoinRoomInput] = useState("");
+  const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("easy");
+  const [cpuTurnOrder, setCpuTurnOrder] = useState<CpuTurnOrder>("random");
 
   useEffect(() => {
     preloadAllGameSounds();
@@ -108,6 +119,66 @@ export function TitlePage() {
                 }}
               >
                 {t("title.localStart")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-end gap-2">
+                <CardTitle>{t("title.cpuTitle")}</CardTitle>
+                <CardDescription className="text-[11px] leading-none sm:text-xs">
+                  {t("title.cpuDescription")}
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <div className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs text-(--text-muted)">{t("title.cpuDifficultyLabel")}</span>
+                  <Select
+                    value={cpuDifficulty}
+                    onValueChange={(v) => setCpuDifficulty(v as CpuDifficulty)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">{t("title.cpuDifficulty.easy")}</SelectItem>
+                      <SelectItem value="medium">{t("title.cpuDifficulty.medium")}</SelectItem>
+                      <SelectItem value="hard">{t("title.cpuDifficulty.hard")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs text-(--text-muted)">{t("title.cpuTurnOrderLabel")}</span>
+                  <Select
+                    value={cpuTurnOrder}
+                    onValueChange={(v) => setCpuTurnOrder(v as CpuTurnOrder)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="random">{t("title.cpuTurnOrder.random")}</SelectItem>
+                      <SelectItem value="first">{t("title.cpuTurnOrder.first")}</SelectItem>
+                      <SelectItem value="second">{t("title.cpuTurnOrder.second")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button
+                type="button"
+                className="w-full"
+                variant="local"
+                onClick={() => {
+                  void navigate({
+                    to: "/cpu",
+                    search: { difficulty: cpuDifficulty, turnOrder: cpuTurnOrder },
+                  });
+                }}
+              >
+                {t("title.cpuStart")}
               </Button>
             </CardContent>
           </Card>
