@@ -89,6 +89,23 @@ export function resolveTurnIndicatorDisplay({
     };
   }
 
+  if (snapshot.mode === "cpu") {
+    if (snapshot.status === "cpuThinking") {
+      return {
+        label: t("game.cpuThinking"),
+        indicatorStonePlayer: displayPlayerId,
+      };
+    }
+    const perspectivePlayerId = snapshot.myPlayerId ?? gameState.currentPlayer;
+    return {
+      label:
+        displayPlayerId === perspectivePlayerId
+          ? t("common.yourTurn")
+          : t("common.cpuTurn"),
+      indicatorStonePlayer: displayPlayerId,
+    };
+  }
+
   const perspectivePlayerId = snapshot.myPlayerId ?? gameState.currentPlayer;
   return {
     label:

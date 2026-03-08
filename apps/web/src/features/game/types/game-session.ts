@@ -1,6 +1,6 @@
 import type { Coordinate, GameStateDTO, PlayerId } from "@pkg/shared/schemas";
 
-export type GameMode = "local" | "online";
+export type GameMode = "local" | "online" | "cpu";
 
 export type GameSessionStatus =
   | "idle"
@@ -12,7 +12,8 @@ export type GameSessionStatus =
   | "turnFailedSelf"
   | "turnFailedOpponent"
   | "error"
-  | "disconnected";
+  | "disconnected"
+  | "cpuThinking";
 
 export interface GameSessionSnapshot {
   mode: GameMode;
