@@ -1,14 +1,16 @@
-import type { GameStateDTO } from "@pkg/shared/schemas";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StoneIcon } from "@/features/game/components/stone-icon";
 import { calculateLuckFeedback } from "@/features/game/lib/luck-feedback";
+import type { GameController } from "@/features/game/types/game-session";
 
 interface FinishedInfoPanelProps {
-  gameState: GameStateDTO;
+  controller: GameController;
 }
 
-export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
+export function FinishedInfoPanel({ controller }: FinishedInfoPanelProps) {
+  const gameState = controller.snapshot.gameState;
   const { t } = useTranslation();
   const feedback = calculateLuckFeedback(gameState.turnHistory);
   const blackPlayerId = gameState.blackPlayer;
@@ -125,6 +127,17 @@ export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
           </tbody>
         </table>
       </CardContent>
+      {controller.rematch && (
+        <div className="px-2 pb-2">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => void controller.rematch?.()}
+          >
+            {t("game.rematch")}
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

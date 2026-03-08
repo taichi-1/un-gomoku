@@ -143,10 +143,15 @@ export function useLocalGameSession(): GameController {
 
   const canInteract = snapshot.gameState.phase === "playing";
 
+  const rematch = useCallback(() => {
+    queryClient.setQueryData(LOCAL_QUERY_KEY, createInitialLocalSnapshot());
+  }, [queryClient]);
+
   return {
     snapshot,
     canInteract,
     setCandidateSelection,
     submitCandidates,
+    rematch,
   };
 }

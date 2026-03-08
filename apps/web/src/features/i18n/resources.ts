@@ -53,6 +53,7 @@ export const resources = {
         winner: "{{player}}の勝ち",
         finishedWinnerIndicator: "ゲーム終了: 勝者 {{player}}",
         finishedDrawIndicator: "ゲーム終了: 引き分け",
+        rematch: "もう一局",
         luckFeedback: {
           result: "勝敗",
           expectedDelta: "期待値差",
@@ -157,6 +158,7 @@ export const resources = {
         winner: "{{player}} wins",
         finishedWinnerIndicator: "Game over: Winner {{player}}",
         finishedDrawIndicator: "Game over: Draw",
+        rematch: "Rematch",
         luckFeedback: {
           result: "Result",
           expectedDelta: "Luck delta",

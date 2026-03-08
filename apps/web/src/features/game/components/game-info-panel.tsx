@@ -16,7 +16,7 @@ export function GameInfoPanel({
   const { snapshot } = controller;
 
   if (showFinishedResult && snapshot.gameState.phase === "finished") {
-    return <FinishedInfoPanel gameState={snapshot.gameState} />;
+    return <FinishedInfoPanel controller={controller} />;
   }
 
   return (

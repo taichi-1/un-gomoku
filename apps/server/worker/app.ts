@@ -105,6 +105,17 @@ export function createWorkerApp() {
     return c.json({ message: "Could not create room" }, 503);
   });
 
+  app.post("/rooms/:roomId/rematch", async (c) => {
+    const roomId = normalizeRoomId(c.req.param("roomId"));
+    if (!isValidRoomId(roomId))
+      return c.json({ message: "Invalid room id" }, 400);
+    const doId = c.env.GAME_ROOM.idFromName(roomId);
+    const stub = c.env.GAME_ROOM.get(doId);
+    return stub.fetch(
+      new Request("https://room.internal/internal/rematch", { method: "POST" }),
+    );
+  });
+
   app.get("/ws/:roomId", async (c) => {
     if (!isWebSocketUpgrade(c.req.raw)) {
       return c.text("Expected websocket upgrade", 426);
