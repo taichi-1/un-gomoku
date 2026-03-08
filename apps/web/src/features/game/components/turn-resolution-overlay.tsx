@@ -35,6 +35,7 @@ interface SequenceLayerProps {
   activeFx: ActiveTurnResolutionFx;
   spec: TurnResolutionDisplaySpec;
   activeStep: TurnResolutionEmphasisStep | null;
+  blackPlayer: PlayerId;
 }
 
 interface FinalLayerProps {
@@ -56,7 +57,12 @@ function clearTimeoutSafe(timeoutId: ReturnType<typeof globalThis.setTimeout>) {
   );
 }
 
-function SequenceLayer({ activeFx, spec, activeStep }: SequenceLayerProps) {
+function SequenceLayer({
+  activeFx,
+  spec,
+  activeStep,
+  blackPlayer,
+}: SequenceLayerProps) {
   const sequenceCandidates = getSequenceOverlayCandidates(activeFx);
   const activeCandidateIndex = activeStep?.candidateIndex ?? 0;
   const hasActiveCandidate = activeStep?.isActive ?? false;
@@ -115,6 +121,7 @@ function SequenceLayer({ activeFx, spec, activeStep }: SequenceLayerProps) {
             />
             <NumberedStoneIcon
               playerId={activeFx.result.player}
+              blackPlayer={blackPlayer}
               number={candidate.rank}
               className="pointer-events-none"
               stoneClassName={
@@ -192,6 +199,7 @@ function FinalLayer({
               <div className="absolute inset-[14%] rounded-full border-2 border-[rgba(235,206,157,0.9)]" />
               <NumberedStoneIcon
                 playerId={activeFx.result.player}
+                blackPlayer={blackPlayer}
                 number={candidate.rank}
                 className="pointer-events-none"
                 stoneClassName="drop-shadow-[0_0_8px_rgba(208,161,90,0.68)]"
@@ -344,6 +352,7 @@ export function TurnResolutionOverlay({
             activeFx={activeFx}
             spec={displaySpec}
             activeStep={activeStep}
+            blackPlayer={blackPlayer}
           />
         ) : null}
         {phase === "final" ? (
