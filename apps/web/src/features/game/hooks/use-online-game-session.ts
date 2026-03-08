@@ -15,6 +15,7 @@ import {
   createInitialOnlineSnapshot,
   normalizeRoomId,
 } from "@/features/game/lib/online-session";
+import { rematchRoom } from "@/features/game/lib/rematch-room";
 import type {
   GameController,
   GameSessionSnapshot,
@@ -161,10 +162,16 @@ export function useOnlineGameSession(rawRoomId: string): GameController {
     }
   }, [queryClient, queryKey, sendMessage, setSnapshot, snapshot]);
 
+  const rematch = useCallback(async () => {
+    if (snapshot.gameState.phase !== "finished") return;
+    await rematchRoom(roomId);
+  }, [roomId, snapshot.gameState.phase]);
+
   return {
     snapshot,
     canInteract: canInteractOnlineSnapshot(snapshot),
     setCandidateSelection,
     submitCandidates,
+    rematch,
   };
 }

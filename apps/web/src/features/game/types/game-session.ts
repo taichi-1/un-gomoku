@@ -31,4 +31,5 @@ export interface GameController {
   canInteract: boolean;
   setCandidateSelection: (coord: Coordinate, shouldSelect: boolean) => void;
   submitCandidates: () => void;
+  rematch?: () => void | Promise<void>;
 }

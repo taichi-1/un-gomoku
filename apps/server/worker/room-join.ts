@@ -78,6 +78,35 @@ export async function handleInitHost(
   } satisfies CreatedRoomResponse);
 }
 
+export async function handleRematch(
+  runtime: GameRoomRuntime,
+): Promise<Response> {
+  if (!runtime.roomExists)
+    return new Response("Room not found", { status: 404 });
+  if (runtime.room.state.phase !== "finished")
+    return new Response("Game not finished", { status: 409 });
+
+  runtime.room.state = createInitialGameState();
+  startGame(runtime.room);
+  runtime.room.candidateDrafts = { player1: [], player2: [] };
+
+  await persistRoomState(runtime);
+
+  const message = JSON.stringify({
+    event: WS_EVENTS.GAME_STATE,
+    state: runtime.room.state,
+  });
+  for (const socket of runtime.room.players.values()) socket.send(message);
+
+  logEvent({
+    event: "room.rematch",
+    roomId: runtime.room.id,
+    playerId: null,
+    result: "ok",
+  });
+  return Response.json({ ok: true });
+}
+
 export async function handleRoomJoin(
   runtime: GameRoomRuntime,
   ws: GameSocket,

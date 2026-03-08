@@ -1,5 +1,6 @@
 import { createInitialGameState } from "@pkg/core/game-state";
 import type { Room } from "../types";
+import { handleRematch } from "./room-join";
 import {
   createSocketAdapter,
   handleInitHost,
@@ -61,6 +62,10 @@ export class GameRoomDurableObject {
 
     if (url.pathname === "/internal/init-host") {
       return handleInitHost(this.runtime, request);
+    }
+
+    if (url.pathname === "/internal/rematch") {
+      return handleRematch(this.runtime);
     }
 
     if (!url.pathname.startsWith("/ws/")) {
