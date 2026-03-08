@@ -143,25 +143,49 @@ export const BoardGrid = memo(function BoardGrid({
             data-y={coord.y}
             onPointerDown={(event) => handleCellPointerDown(coord, event)}
             className={cn(
-              "relative flex items-center justify-center transition-colors",
-              "border-r border-b border-[rgba(26,18,12,0.38)]",
-              coord.x === 0 && "border-l border-[rgba(26,18,12,0.38)]",
-              coord.y === 0 && "border-t border-[rgba(26,18,12,0.38)]",
+              "group relative flex items-center justify-center",
               "bg-transparent",
               visibleCellState === null && canInteract
-                ? "cursor-pointer hover:bg-[rgba(208,161,90,0.28)]"
+                ? "cursor-pointer"
                 : "cursor-default",
             )}
           >
+            {/* Horizontal line segment */}
+            <div
+              className="absolute top-1/2 h-px pointer-events-none"
+              style={{
+                left: coord.x === 0 ? "50%" : "0",
+                right: coord.x === BOARD_SIZE - 1 ? "50%" : "0",
+                background: "rgba(26,18,12,0.55)",
+                transform: "translateY(-50%)",
+              }}
+            />
+            {/* Vertical line segment */}
+            <div
+              className="absolute left-1/2 w-px pointer-events-none"
+              style={{
+                top: coord.y === 0 ? "50%" : "0",
+                bottom: coord.y === BOARD_SIZE - 1 ? "50%" : "0",
+                background: "rgba(26,18,12,0.55)",
+                transform: "translateX(-50%)",
+              }}
+            />
+            {visibleCellState === null && canInteract ? (
+              <div className="pointer-events-none absolute size-[65%] rounded-full bg-[rgba(208,161,90,0.25)] opacity-0 transition-opacity group-hover:opacity-100" />
+            ) : null}
             {isStarPoint && visibleCellState === null && !hasCandidateStone ? (
               <div className="pointer-events-none absolute size-[18%] rounded-full bg-[rgba(24,16,10,0.58)]" />
             ) : null}
             {visibleCellState ? (
-              <StoneIcon playerId={visibleCellState} />
+              <StoneIcon
+                playerId={visibleCellState}
+                blackPlayer={snapshot.gameState.blackPlayer}
+              />
             ) : null}
             {candidateStone ? (
               <NumberedStoneIcon
                 playerId={candidateStone.playerId}
+                blackPlayer={snapshot.gameState.blackPlayer}
                 number={candidateStone.number}
                 className="pointer-events-none"
                 numberStyle={{ fontSize: "calc(var(--board-size) / 46)" }}
