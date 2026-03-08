@@ -10,7 +10,11 @@ import { GamePage } from "@/features/game/components/game-page";
 import { useCpuGameSession } from "@/features/game/hooks/use-cpu-game-session";
 import { useLocalGameSession } from "@/features/game/hooks/use-local-game-session";
 import { useOnlineGameSession } from "@/features/game/hooks/use-online-game-session";
-import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/cpu";
+import type {
+  CpuDifficulty,
+  CpuPersonality,
+  CpuTurnOrder,
+} from "@/features/game/lib/cpu";
 import { TitlePage } from "@/features/title/components/title-page";
 
 function RootLayout() {
@@ -29,10 +33,15 @@ function LocalGameRouteComponent() {
 
 const VALID_DIFFICULTIES = new Set<string>(["easy", "medium", "hard"]);
 const VALID_TURN_ORDERS = new Set<string>(["first", "second", "random"]);
+const VALID_PERSONALITIES = new Set<string>([
+  "aggressive",
+  "balanced",
+  "defensive",
+]);
 
 function CpuGameRouteComponent() {
-  const { difficulty, turnOrder } = cpuRoute.useSearch();
-  const controller = useCpuGameSession(difficulty, turnOrder);
+  const { difficulty, turnOrder, personality } = cpuRoute.useSearch();
+  const controller = useCpuGameSession(difficulty, turnOrder, personality);
   return <GamePage controller={controller} />;
 }
 
@@ -63,12 +72,20 @@ const cpuRoute = createRoute({
   path: "/cpu",
   validateSearch: (
     search: Record<string, unknown>,
-  ): { difficulty: CpuDifficulty; turnOrder: CpuTurnOrder } => {
+  ): {
+    difficulty: CpuDifficulty;
+    turnOrder: CpuTurnOrder;
+    personality: CpuPersonality;
+  } => {
     const d = String(search.difficulty ?? "easy");
     const t = String(search.turnOrder ?? "random");
+    const p = String(search.personality ?? "balanced");
     return {
       difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "easy",
       turnOrder: VALID_TURN_ORDERS.has(t) ? (t as CpuTurnOrder) : "random",
+      personality: VALID_PERSONALITIES.has(p)
+        ? (p as CpuPersonality)
+        : "balanced",
     };
   },
   component: CpuGameRouteComponent,

@@ -36,6 +36,12 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
+        cpuPersonalityLabel: "スタイル",
+        cpuPersonality: {
+          aggressive: "攻め型",
+          balanced: "バランス型",
+          defensive: "守り型",
+        },
         cpuTurnOrderLabel: "手番",
         cpuTurnOrder: {
           first: "先行",
@@ -70,6 +76,16 @@ export const resources = {
         finishedWinnerIndicator: "ゲーム終了: 勝者 {{player}}",
         finishedDrawIndicator: "ゲーム終了: 引き分け",
         cpuThinking: "CPUが考え中…",
+        cpuDifficultyDisplay: {
+          easy: "よわい",
+          medium: "ふつう",
+          hard: "つよい",
+        },
+        cpuPersonalityDisplay: {
+          aggressive: "攻め型",
+          balanced: "バランス型",
+          defensive: "守り型",
+        },
         rematch: "もう一局",
         luckFeedback: {
           result: "勝敗",
@@ -158,6 +174,12 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
+        cpuPersonalityLabel: "Style",
+        cpuPersonality: {
+          aggressive: "Attacker",
+          balanced: "Balanced",
+          defensive: "Defender",
+        },
         cpuTurnOrderLabel: "Turn order",
         cpuTurnOrder: {
           first: "First",
@@ -192,6 +214,16 @@ export const resources = {
         finishedWinnerIndicator: "Game over: Winner {{player}}",
         finishedDrawIndicator: "Game over: Draw",
         cpuThinking: "CPU is thinking...",
+        cpuDifficultyDisplay: {
+          easy: "Easy",
+          medium: "Medium",
+          hard: "Hard",
+        },
+        cpuPersonalityDisplay: {
+          aggressive: "Attacker",
+          balanced: "Balanced",
+          defensive: "Defender",
+        },
         rematch: "Rematch",
         luckFeedback: {
           result: "Result",

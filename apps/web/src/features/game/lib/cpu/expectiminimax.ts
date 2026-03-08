@@ -37,6 +37,8 @@ export function computeBestMove(
     board,
     cpuPlayer,
     config.maxCandidateCells,
+    config.attackWeight,
+    config.defenseWeight,
   );
 
   if (rankedCells.length === 0) {
@@ -94,7 +96,13 @@ function chanceNode(
   // ── Failure branch: no stone placed, turn switches ──
   let failureValue: number;
   if (depth <= 1) {
-    failureValue = evaluateBoard(board, cpuPlayer, config.evaluationNoise);
+    failureValue = evaluateBoard(
+      board,
+      cpuPlayer,
+      config.evaluationNoise,
+      config.attackWeight,
+      config.defenseWeight,
+    );
   } else {
     const nextPlayer = getNextPlayer(currentPlayer);
     const nextIsMax = nextPlayer === cpuPlayer;
@@ -116,7 +124,13 @@ function chanceNode(
     }
 
     if (depth <= 1) {
-      successSum += evaluateBoard(nextBoard, cpuPlayer, config.evaluationNoise);
+      successSum += evaluateBoard(
+        nextBoard,
+        cpuPlayer,
+        config.evaluationNoise,
+        config.attackWeight,
+        config.defenseWeight,
+      );
       continue;
     }
 
@@ -163,9 +177,17 @@ function maxNode(
     board,
     currentPlayer,
     config.maxCandidateCells,
+    config.attackWeight,
+    config.defenseWeight,
   );
   if (cells.length === 0) {
-    return evaluateBoard(board, cpuPlayer, config.evaluationNoise);
+    return evaluateBoard(
+      board,
+      cpuPlayer,
+      config.evaluationNoise,
+      config.attackWeight,
+      config.defenseWeight,
+    );
   }
 
   let best = -Infinity;
@@ -207,9 +229,17 @@ function minNode(
     board,
     currentPlayer,
     config.maxCandidateCells,
+    config.attackWeight,
+    config.defenseWeight,
   );
   if (cells.length === 0) {
-    return evaluateBoard(board, cpuPlayer, config.evaluationNoise);
+    return evaluateBoard(
+      board,
+      cpuPlayer,
+      config.evaluationNoise,
+      config.attackWeight,
+      config.defenseWeight,
+    );
   }
 
   let best = Infinity;

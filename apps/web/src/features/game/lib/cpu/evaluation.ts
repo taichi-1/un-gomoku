@@ -103,12 +103,13 @@ export function evaluateBoard(
   board: BoardState,
   cpuPlayer: PlayerId,
   noise: number,
+  attackWeight: number,
+  defenseWeight: number,
 ): number {
   const cpuScore = scoreForPlayer(board, cpuPlayer);
   const oppScore = scoreForPlayer(board, getNextPlayer(cpuPlayer));
 
-  // Slightly over-weight defence so the CPU blocks threats early
-  const raw = cpuScore - oppScore * 1.1;
+  const raw = cpuScore * attackWeight - oppScore * defenseWeight;
 
   if (noise === 0) return raw;
   return raw * (1 + (Math.random() - 0.5) * noise);
@@ -123,6 +124,8 @@ export function scoreCellPlacement(
   board: BoardState,
   coord: { x: number; y: number },
   player: PlayerId,
+  attackWeight: number,
+  defenseWeight: number,
 ): number {
   const opponent = getNextPlayer(player);
   let offence = 0;
@@ -133,8 +136,7 @@ export function scoreCellPlacement(
     defence += lineScore(board, coord, dx, dy, opponent);
   }
 
-  // Defence is slightly more valuable for move ordering
-  return offence + defence * 1.05;
+  return offence * attackWeight + defence * defenseWeight;
 }
 
 /**

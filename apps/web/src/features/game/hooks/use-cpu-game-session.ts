@@ -11,7 +11,9 @@ import {
 } from "@/features/game/lib/candidate";
 import {
   CPU_CONFIGS,
+  CPU_PERSONALITY_CONFIGS,
   type CpuDifficulty,
+  type CpuPersonality,
   type CpuTurnOrder,
   computeBestMove,
 } from "@/features/game/lib/cpu";
@@ -23,11 +25,23 @@ import type {
 /** Estimated duration of the player's turn resolution animation in ms. */
 const ANIMATION_ESTIMATED_MS = 1600;
 
-function createCpuQueryKey(difficulty: CpuDifficulty, turnOrder: CpuTurnOrder) {
-  return [...gameSessionQueryKey("cpu", difficulty), turnOrder] as const;
+function createCpuQueryKey(
+  difficulty: CpuDifficulty,
+  turnOrder: CpuTurnOrder,
+  personality: CpuPersonality,
+) {
+  return [
+    ...gameSessionQueryKey("cpu", difficulty),
+    turnOrder,
+    personality,
+  ] as const;
 }
 
-function createInitialCpuSnapshot(turnOrder: CpuTurnOrder): GameSessionSnapshot {
+function createInitialCpuSnapshot(
+  turnOrder: CpuTurnOrder,
+  difficulty: CpuDifficulty,
+  personality: CpuPersonality,
+): GameSessionSnapshot {
   const initialState = createInitialGameState();
   const blackPlayer: PlayerId = "player1";
   const humanPlayer: PlayerId =
@@ -54,28 +68,38 @@ function createInitialCpuSnapshot(turnOrder: CpuTurnOrder): GameSessionSnapshot 
     opponentCandidates: [],
     status: "connected",
     statusMessage: null,
+    cpuInfo: { difficulty, personality },
   };
 }
 
-export function useCpuGameSession(difficulty: CpuDifficulty, turnOrder: CpuTurnOrder): GameController {
+export function useCpuGameSession(
+  difficulty: CpuDifficulty,
+  turnOrder: CpuTurnOrder,
+  personality: CpuPersonality,
+): GameController {
   const queryClient = useQueryClient();
   const cpuTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const queryKey = createCpuQueryKey(difficulty, turnOrder);
+  const queryKey = createCpuQueryKey(difficulty, turnOrder, personality);
 
   const { data: snapshot } = useQuery({
     queryKey,
-    queryFn: async () => createInitialCpuSnapshot(turnOrder),
-    initialData: () => createInitialCpuSnapshot(turnOrder),
+    queryFn: async () =>
+      createInitialCpuSnapshot(turnOrder, difficulty, personality),
+    initialData: () =>
+      createInitialCpuSnapshot(turnOrder, difficulty, personality),
   });
 
   const setSnapshot = useCallback(
     (updater: (current: GameSessionSnapshot) => GameSessionSnapshot): void => {
       queryClient.setQueryData<GameSessionSnapshot>(queryKey, (current) =>
-        updater(current ?? createInitialCpuSnapshot(turnOrder)),
+        updater(
+          current ??
+            createInitialCpuSnapshot(turnOrder, difficulty, personality),
+        ),
       );
     },
-    [queryClient, queryKey],
+    [queryClient, queryKey, turnOrder, difficulty, personality],
   );
 
   const clearCpuTimers = useCallback(() => {
@@ -97,7 +121,10 @@ export function useCpuGameSession(difficulty: CpuDifficulty, turnOrder: CpuTurnO
       if (gameState.currentPlayer === myPlayerId) return;
 
       const cpuPlayer = gameState.currentPlayer;
-      const config = CPU_CONFIGS[difficulty];
+      const config = {
+        ...CPU_CONFIGS[difficulty],
+        ...CPU_PERSONALITY_CONFIGS[personality],
+      };
       const { candidates } = computeBestMove(
         gameState.board,
         cpuPlayer,
@@ -156,7 +183,7 @@ export function useCpuGameSession(difficulty: CpuDifficulty, turnOrder: CpuTurnO
 
       cpuTimersRef.current.push(startTimer);
     },
-    [queryClient, queryKey, difficulty, setSnapshot],
+    [queryClient, queryKey, difficulty, personality, setSnapshot],
   );
 
   // ── Auto-trigger CPU turn when it's CPU's turn ──
@@ -279,8 +306,18 @@ export function useCpuGameSession(difficulty: CpuDifficulty, turnOrder: CpuTurnO
 
   const rematch = useCallback(() => {
     clearCpuTimers();
-    queryClient.setQueryData(queryKey, createInitialCpuSnapshot(turnOrder));
-  }, [clearCpuTimers, queryClient, queryKey, turnOrder]);
+    queryClient.setQueryData(
+      queryKey,
+      createInitialCpuSnapshot(turnOrder, difficulty, personality),
+    );
+  }, [
+    clearCpuTimers,
+    queryClient,
+    queryKey,
+    turnOrder,
+    difficulty,
+    personality,
+  ]);
 
   return {
     snapshot,

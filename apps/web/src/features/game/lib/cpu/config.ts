@@ -9,6 +9,8 @@ export type CpuDifficulty = "easy" | "medium" | "hard";
 
 export type CpuTurnOrder = "first" | "second" | "random";
 
+export type CpuPersonality = "aggressive" | "balanced" | "defensive";
+
 export interface CpuConfig {
   /** How many half-turns the search tree explores (1 = my move only). */
   searchDepth: number;
@@ -22,9 +24,16 @@ export interface CpuConfig {
   candidateSelectionIntervalMs: number;
   /** Pause in ms after all candidates are shown, before turn resolution. */
   postSelectionPauseMs: number;
+  /** Weight applied to CPU's own score in evaluation (higher = more aggressive). */
+  attackWeight: number;
+  /** Weight applied to opponent's score in evaluation (higher = more defensive). */
+  defenseWeight: number;
 }
 
-export const CPU_CONFIGS: Record<CpuDifficulty, CpuConfig> = {
+export const CPU_CONFIGS: Record<
+  CpuDifficulty,
+  Omit<CpuConfig, "attackWeight" | "defenseWeight">
+> = {
   easy: {
     searchDepth: 1,
     maxCandidateCells: 8,
@@ -49,4 +58,13 @@ export const CPU_CONFIGS: Record<CpuDifficulty, CpuConfig> = {
     candidateSelectionIntervalMs: 250,
     postSelectionPauseMs: 500,
   },
+};
+
+export const CPU_PERSONALITY_CONFIGS: Record<
+  CpuPersonality,
+  { attackWeight: number; defenseWeight: number }
+> = {
+  aggressive: { attackWeight: 1.3, defenseWeight: 0.9 },
+  balanced: { attackWeight: 1.0, defenseWeight: 1.1 },
+  defensive: { attackWeight: 0.8, defenseWeight: 1.4 },
 };
