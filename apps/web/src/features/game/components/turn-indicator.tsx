@@ -118,6 +118,7 @@ export function TurnIndicator({
         {indicatorStonePlayer ? (
           <StoneIcon
             playerId={indicatorStonePlayer}
+            blackPlayer={snapshot.gameState.blackPlayer}
             className="size-3.5 shrink-0"
           />
         ) : null}

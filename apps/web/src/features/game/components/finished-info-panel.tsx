@@ -11,6 +11,8 @@ interface FinishedInfoPanelProps {
 export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
   const { t } = useTranslation();
   const feedback = calculateLuckFeedback(gameState.turnHistory);
+  const blackPlayerId = gameState.blackPlayer;
+  const whitePlayerId = blackPlayerId === "player1" ? "player2" : "player1";
 
   const formatSignedPercentage = (value: number): string => {
     const rounded = Math.round(value * 10) / 10;
@@ -40,14 +42,22 @@ export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
               <th className="w-[32%] px-2 py-1.5 text-left" />
               <th className="px-2 py-1.5 text-left font-medium text-(--text-normal)">
                 <div className="flex items-center gap-1.5">
-                  <StoneIcon playerId="player1" className="h-3.5 w-3.5" />
-                  <span>{t("common.player.player1")}</span>
+                  <StoneIcon
+                    playerId={blackPlayerId}
+                    blackPlayer={blackPlayerId}
+                    className="h-3.5 w-3.5"
+                  />
+                  <span>{t("common.stone.black")}</span>
                 </div>
               </th>
               <th className="px-2 py-1.5 text-left font-medium text-(--text-normal)">
                 <div className="flex items-center gap-1.5">
-                  <StoneIcon playerId="player2" className="h-3.5 w-3.5" />
-                  <span>{t("common.player.player2")}</span>
+                  <StoneIcon
+                    playerId={whitePlayerId}
+                    blackPlayer={blackPlayerId}
+                    className="h-3.5 w-3.5"
+                  />
+                  <span>{t("common.stone.white")}</span>
                 </div>
               </th>
             </tr>
@@ -58,10 +68,10 @@ export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
                 {t("game.luckFeedback.result")}
               </th>
               <td className="px-2 py-2 font-semibold text-(--text-strong)">
-                {resolveResultLabel("player1")}
+                {resolveResultLabel(blackPlayerId)}
               </td>
               <td className="px-2 py-2 font-semibold text-(--text-strong)">
-                {resolveResultLabel("player2")}
+                {resolveResultLabel(whitePlayerId)}
               </td>
             </tr>
             <tr className="border-b border-(--table-divider)">
@@ -71,11 +81,13 @@ export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
               <td className="px-2 py-2 text-(--text-normal)">
                 <div className="flex flex-col">
                   <span>
-                    {formatSignedPercentage(feedback.player1.luckDeltaRate)}
+                    {formatSignedPercentage(
+                      feedback[blackPlayerId].luckDeltaRate,
+                    )}
                   </span>
                   <span className="text-[11px] text-(--text-muted)">
                     {t(
-                      `game.luckFeedback.label.${feedback.player1.luckLabelKey}`,
+                      `game.luckFeedback.label.${feedback[blackPlayerId].luckLabelKey}`,
                     )}
                   </span>
                 </div>
@@ -83,11 +95,13 @@ export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
               <td className="px-2 py-2 text-(--text-normal)">
                 <div className="flex flex-col">
                   <span>
-                    {formatSignedPercentage(feedback.player2.luckDeltaRate)}
+                    {formatSignedPercentage(
+                      feedback[whitePlayerId].luckDeltaRate,
+                    )}
                   </span>
                   <span className="text-[11px] text-(--text-muted)">
                     {t(
-                      `game.luckFeedback.label.${feedback.player2.luckLabelKey}`,
+                      `game.luckFeedback.label.${feedback[whitePlayerId].luckLabelKey}`,
                     )}
                   </span>
                 </div>
@@ -98,12 +112,14 @@ export function FinishedInfoPanel({ gameState }: FinishedInfoPanelProps) {
                 {t("game.luckFeedback.successCount")}
               </th>
               <td className="px-2 py-2 text-(--text-normal)">
-                {feedback.player1.successCount} / {feedback.player1.totalTurns}{" "}
-                ({formatSuccessPercentage(feedback.player1.successRate)})
+                {feedback[blackPlayerId].successCount} /{" "}
+                {feedback[blackPlayerId].totalTurns} (
+                {formatSuccessPercentage(feedback[blackPlayerId].successRate)})
               </td>
               <td className="px-2 py-2 text-(--text-normal)">
-                {feedback.player2.successCount} / {feedback.player2.totalTurns}{" "}
-                ({formatSuccessPercentage(feedback.player2.successRate)})
+                {feedback[whitePlayerId].successCount} /{" "}
+                {feedback[whitePlayerId].totalTurns} (
+                {formatSuccessPercentage(feedback[whitePlayerId].successRate)})
               </td>
             </tr>
           </tbody>

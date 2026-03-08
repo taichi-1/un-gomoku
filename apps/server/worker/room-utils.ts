@@ -53,12 +53,13 @@ export function startGame(
   room: Room,
   random: () => number = Math.random,
 ): void {
-  const startingPlayer = random() < 0.5 ? "player1" : "player2";
+  const blackPlayer: PlayerId = random() < 0.5 ? "player1" : "player2";
   room.candidateDrafts = { player1: [], player2: [] };
   room.state = {
     ...room.state,
     phase: "playing",
-    currentPlayer: startingPlayer,
+    blackPlayer,
+    currentPlayer: blackPlayer,
     winner: null,
     isDraw: false,
   };

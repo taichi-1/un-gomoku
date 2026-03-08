@@ -18,6 +18,7 @@ const LOCAL_QUERY_KEY = gameSessionQueryKey("local", null);
 
 function createInitialLocalSnapshot(): GameSessionSnapshot {
   const initialState = createInitialGameState();
+  const blackPlayer = Math.random() < 0.5 ? "player1" : "player2";
 
   return {
     mode: "local",
@@ -27,7 +28,8 @@ function createInitialLocalSnapshot(): GameSessionSnapshot {
     gameState: {
       ...initialState,
       phase: "playing",
-      currentPlayer: Math.random() < 0.5 ? "player1" : "player2",
+      blackPlayer,
+      currentPlayer: blackPlayer,
     },
     selectedCandidates: [],
     opponentCandidates: [],

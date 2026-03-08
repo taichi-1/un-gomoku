@@ -48,6 +48,7 @@ export function GameBoard({
           activeFx={activeFx}
           phase={phase}
           onPhaseComplete={onPhaseComplete}
+          blackPlayer={snapshot.gameState.blackPlayer}
         />
       </div>
     </div>
