@@ -12,7 +12,8 @@ import { useLocalGameSession } from "@/features/game/hooks/use-local-game-sessio
 import { useOnlineGameSession } from "@/features/game/hooks/use-online-game-session";
 import type {
   CpuDifficulty,
-  CpuPersonality,
+  CpuRisk,
+  CpuStyle,
   CpuTurnOrder,
 } from "@/features/game/lib/cpu";
 import { TitlePage } from "@/features/title/components/title-page";
@@ -33,15 +34,12 @@ function LocalGameRouteComponent() {
 
 const VALID_DIFFICULTIES = new Set<string>(["easy", "medium", "hard"]);
 const VALID_TURN_ORDERS = new Set<string>(["first", "second", "random"]);
-const VALID_PERSONALITIES = new Set<string>([
-  "aggressive",
-  "balanced",
-  "defensive",
-]);
+const VALID_STYLES = new Set<string>(["rush", "balanced", "guard"]);
+const VALID_RISKS = new Set<string>(["safe", "balanced", "bold"]);
 
 function CpuGameRouteComponent() {
-  const { difficulty, turnOrder, personality } = cpuRoute.useSearch();
-  const controller = useCpuGameSession(difficulty, turnOrder, personality);
+  const { difficulty, turnOrder, style, risk } = cpuRoute.useSearch();
+  const controller = useCpuGameSession(difficulty, turnOrder, style, risk);
   return <GamePage controller={controller} />;
 }
 
@@ -75,17 +73,18 @@ const cpuRoute = createRoute({
   ): {
     difficulty: CpuDifficulty;
     turnOrder: CpuTurnOrder;
-    personality: CpuPersonality;
+    style: CpuStyle;
+    risk: CpuRisk;
   } => {
-    const d = String(search.difficulty ?? "easy");
+    const d = String(search.difficulty ?? "medium");
     const t = String(search.turnOrder ?? "random");
-    const p = String(search.personality ?? "balanced");
+    const s = String(search.style ?? "balanced");
+    const r = String(search.risk ?? "balanced");
     return {
-      difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "easy",
+      difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "medium",
       turnOrder: VALID_TURN_ORDERS.has(t) ? (t as CpuTurnOrder) : "random",
-      personality: VALID_PERSONALITIES.has(p)
-        ? (p as CpuPersonality)
-        : "balanced",
+      style: VALID_STYLES.has(s) ? (s as CpuStyle) : "balanced",
+      risk: VALID_RISKS.has(r) ? (r as CpuRisk) : "balanced",
     };
   },
   component: CpuGameRouteComponent,

@@ -23,10 +23,10 @@ const DIRECTIONS: readonly [number, number][] = [
 
 const PATTERN_SCORE: readonly (readonly number[])[] = [
   /*0*/ [0, 0, 0],
-  /*1*/ [0, 1, 10],
-  /*2*/ [0, 10, 50],
-  /*3*/ [0, 100, 500],
-  /*4*/ [0, 1_000, 50_000],
+  /*1*/ [0, 2, 12],
+  /*2*/ [0, 16, 64],
+  /*3*/ [0, 200, 1_100],
+  /*4*/ [0, 6_000, 130_000],
   /*5*/ [1_000_000, 1_000_000, 1_000_000],
 ];
 
@@ -45,11 +45,16 @@ function cellAt(board: BoardState, x: number, y: number): string | null {
   return board[y]?.[x] ?? null;
 }
 
-// ── Per-player score (sum of all pattern scores) ──
+interface RunInfo {
+  count: number;
+  openEnds: number;
+}
 
-function scoreForPlayer(board: BoardState, player: PlayerId): number {
-  let total = 0;
-
+function forEachRun(
+  board: BoardState,
+  player: PlayerId,
+  iteratee: (run: RunInfo) => void,
+): void {
   for (const [dx, dy] of DIRECTIONS) {
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
@@ -83,11 +88,41 @@ function scoreForPlayer(board: BoardState, player: PlayerId): number {
           openEnds++;
         }
 
-        total += patternScore(count, openEnds);
+        iteratee({ count, openEnds });
       }
     }
   }
+}
 
+// ── Per-player score (sum of all pattern scores) ──
+
+function scoreForPlayer(board: BoardState, player: PlayerId): number {
+  let total = 0;
+  forEachRun(board, player, ({ count, openEnds }) => {
+    total += patternScore(count, openEnds);
+  });
+  return total;
+}
+
+function scoreThreatsForPlayer(board: BoardState, player: PlayerId): number {
+  let total = 0;
+  forEachRun(board, player, ({ count, openEnds }) => {
+    if (count >= 5) {
+      total += 220_000;
+      return;
+    }
+    if (count === 4 && openEnds === 2) {
+      total += 95_000;
+      return;
+    }
+    if (count === 4 && openEnds === 1) {
+      total += 52_000;
+      return;
+    }
+    if (count === 3 && openEnds === 2) {
+      total += 13_000;
+    }
+  });
   return total;
 }
 
@@ -105,11 +140,18 @@ export function evaluateBoard(
   noise: number,
   attackWeight: number,
   defenseWeight: number,
+  threatBlockWeight: number,
 ): number {
+  const opponent = getNextPlayer(cpuPlayer);
   const cpuScore = scoreForPlayer(board, cpuPlayer);
-  const oppScore = scoreForPlayer(board, getNextPlayer(cpuPlayer));
+  const oppScore = scoreForPlayer(board, opponent);
+  const cpuThreat = scoreThreatsForPlayer(board, cpuPlayer);
+  const oppThreat = scoreThreatsForPlayer(board, opponent);
 
-  const raw = cpuScore * attackWeight - oppScore * defenseWeight;
+  const raw =
+    cpuScore * attackWeight -
+    oppScore * defenseWeight +
+    (cpuThreat - oppThreat) * threatBlockWeight;
 
   if (noise === 0) return raw;
   return raw * (1 + (Math.random() - 0.5) * noise);
@@ -126,6 +168,7 @@ export function scoreCellPlacement(
   player: PlayerId,
   attackWeight: number,
   defenseWeight: number,
+  threatBlockWeight: number,
 ): number {
   const opponent = getNextPlayer(player);
   let offence = 0;
@@ -136,7 +179,13 @@ export function scoreCellPlacement(
     defence += lineScore(board, coord, dx, dy, opponent);
   }
 
-  return offence * attackWeight + defence * defenseWeight;
+  const createsWin = wouldCreateWinByPlacement(board, coord, player);
+  const blocksWin = wouldCreateWinByPlacement(board, coord, opponent);
+  const tactical =
+    (createsWin ? WIN_SCORE * 0.85 : 0) +
+    (blocksWin ? WIN_SCORE * 0.65 * threatBlockWeight : 0);
+
+  return offence * attackWeight + defence * defenseWeight + tactical;
 }
 
 /**
@@ -177,4 +226,40 @@ function lineScore(
   if (negativeOpen) openEnds++;
 
   return patternScore(count, openEnds);
+}
+
+function wouldCreateWinByPlacement(
+  board: BoardState,
+  coord: { x: number; y: number },
+  player: PlayerId,
+): boolean {
+  if (!inBounds(coord.x, coord.y) || cellAt(board, coord.x, coord.y) !== null) {
+    return false;
+  }
+
+  for (const [dx, dy] of DIRECTIONS) {
+    let count = 1;
+
+    let cx = coord.x + dx;
+    let cy = coord.y + dy;
+    while (inBounds(cx, cy) && cellAt(board, cx, cy) === player) {
+      count++;
+      cx += dx;
+      cy += dy;
+    }
+
+    cx = coord.x - dx;
+    cy = coord.y - dy;
+    while (inBounds(cx, cy) && cellAt(board, cx, cy) === player) {
+      count++;
+      cx -= dx;
+      cy -= dy;
+    }
+
+    if (count >= 5) {
+      return true;
+    }
+  }
+
+  return false;
 }

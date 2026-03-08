@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Shuffle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppHeader } from "@/components/app-header";
@@ -21,7 +22,8 @@ import {
 } from "@/components/ui/select";
 import type {
   CpuDifficulty,
-  CpuPersonality,
+  CpuRisk,
+  CpuStyle,
   CpuTurnOrder,
 } from "@/features/game/lib/cpu";
 import { preloadAllGameSounds } from "@/features/game/sound/game-sound-player";
@@ -29,6 +31,22 @@ import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
 
 const ROOM_ID_PATTERN = /^[A-Z0-9]{6}$/;
+const CPU_DIFFICULTY_OPTIONS: readonly CpuDifficulty[] = [
+  "easy",
+  "medium",
+  "hard",
+];
+const CPU_TURN_ORDER_OPTIONS: readonly CpuTurnOrder[] = [
+  "first",
+  "second",
+  "random",
+];
+const CPU_STYLE_OPTIONS: readonly CpuStyle[] = ["rush", "balanced", "guard"];
+const CPU_RISK_OPTIONS: readonly CpuRisk[] = ["safe", "balanced", "bold"];
+
+function pickRandom<T>(values: readonly T[]): T {
+  return values[Math.floor(Math.random() * values.length)] as T;
+}
 
 function normalizeRoomIdInput(value: string): string {
   return value
@@ -41,10 +59,11 @@ export function TitlePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [joinRoomInput, setJoinRoomInput] = useState("");
-  const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("easy");
-  const [cpuPersonality, setCpuPersonality] =
-    useState<CpuPersonality>("balanced");
+  const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("medium");
+  const [cpuStyle, setCpuStyle] = useState<CpuStyle>("balanced");
+  const [cpuRisk, setCpuRisk] = useState<CpuRisk>("balanced");
   const [cpuTurnOrder, setCpuTurnOrder] = useState<CpuTurnOrder>("random");
+  const [isCpuSettingsOpen, setIsCpuSettingsOpen] = useState(false);
 
   useEffect(() => {
     preloadAllGameSounds();
@@ -78,6 +97,13 @@ export function TitlePage() {
     [joinRoomInput],
   );
   const canJoin = ROOM_ID_PATTERN.test(normalizedRoomId);
+
+  const randomizeCpuSettings = (): void => {
+    setCpuDifficulty(pickRandom(CPU_DIFFICULTY_OPTIONS));
+    setCpuTurnOrder(pickRandom(CPU_TURN_ORDER_OPTIONS));
+    setCpuStyle(pickRandom(CPU_STYLE_OPTIONS));
+    setCpuRisk(pickRandom(CPU_RISK_OPTIONS));
+  };
 
   const handleJoin = (): void => {
     if (!canJoin) {
@@ -125,112 +151,6 @@ export function TitlePage() {
                 }}
               >
                 {t("title.localStart")}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-end gap-2">
-                <CardTitle>{t("title.cpuTitle")}</CardTitle>
-                <CardDescription className="text-[11px] leading-none sm:text-xs">
-                  {t("title.cpuDescription")}
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-(--text-muted)">
-                    {t("title.cpuDifficultyLabel")}
-                  </span>
-                  <Select
-                    value={cpuDifficulty}
-                    onValueChange={(v) => setCpuDifficulty(v as CpuDifficulty)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="easy">
-                        {t("title.cpuDifficulty.easy")}
-                      </SelectItem>
-                      <SelectItem value="medium">
-                        {t("title.cpuDifficulty.medium")}
-                      </SelectItem>
-                      <SelectItem value="hard">
-                        {t("title.cpuDifficulty.hard")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-(--text-muted)">
-                    {t("title.cpuPersonalityLabel")}
-                  </span>
-                  <Select
-                    value={cpuPersonality}
-                    onValueChange={(v) =>
-                      setCpuPersonality(v as CpuPersonality)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="aggressive">
-                        {t("title.cpuPersonality.aggressive")}
-                      </SelectItem>
-                      <SelectItem value="balanced">
-                        {t("title.cpuPersonality.balanced")}
-                      </SelectItem>
-                      <SelectItem value="defensive">
-                        {t("title.cpuPersonality.defensive")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
-                  <span className="text-xs text-(--text-muted)">
-                    {t("title.cpuTurnOrderLabel")}
-                  </span>
-                  <Select
-                    value={cpuTurnOrder}
-                    onValueChange={(v) => setCpuTurnOrder(v as CpuTurnOrder)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="random">
-                        {t("title.cpuTurnOrder.random")}
-                      </SelectItem>
-                      <SelectItem value="first">
-                        {t("title.cpuTurnOrder.first")}
-                      </SelectItem>
-                      <SelectItem value="second">
-                        {t("title.cpuTurnOrder.second")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button
-                type="button"
-                className="w-full"
-                variant="local"
-                onClick={() => {
-                  void navigate({
-                    to: "/cpu",
-                    search: {
-                      difficulty: cpuDifficulty,
-                      personality: cpuPersonality,
-                      turnOrder: cpuTurnOrder,
-                    },
-                  });
-                }}
-              >
-                {t("title.cpuStart")}
               </Button>
             </CardContent>
           </Card>
@@ -288,6 +208,178 @@ export function TitlePage() {
                   {createRoomMutation.error.message}
                 </p>
               ) : null}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-end gap-2">
+                  <CardTitle>{t("title.cpuTitle")}</CardTitle>
+                  <CardDescription className="text-[11px] leading-none sm:text-xs">
+                    {t("title.cpuDescription")}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={
+                      isCpuSettingsOpen
+                        ? t("title.cpuSettingsCollapse")
+                        : t("title.cpuSettingsExpand")
+                    }
+                    title={
+                      isCpuSettingsOpen
+                        ? t("title.cpuSettingsCollapse")
+                        : t("title.cpuSettingsExpand")
+                    }
+                    aria-expanded={isCpuSettingsOpen}
+                    onClick={() => setIsCpuSettingsOpen((prev) => !prev)}
+                    className="h-8 w-8 shrink-0 rounded-sm p-0 hover:bg-transparent"
+                  >
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        isCpuSettingsOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={t("title.cpuRandomize")}
+                    title={t("title.cpuRandomize")}
+                    onClick={randomizeCpuSettings}
+                    className="h-8 w-8 shrink-0 rounded-sm p-0 hover:bg-transparent"
+                  >
+                    <Shuffle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {isCpuSettingsOpen ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-(--text-muted)">
+                      {t("title.cpuDifficultyLabel")}
+                    </span>
+                    <Select
+                      value={cpuDifficulty}
+                      onValueChange={(v) =>
+                        setCpuDifficulty(v as CpuDifficulty)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">
+                          {t("title.cpuDifficulty.easy")}
+                        </SelectItem>
+                        <SelectItem value="medium">
+                          {t("title.cpuDifficulty.medium")}
+                        </SelectItem>
+                        <SelectItem value="hard">
+                          {t("title.cpuDifficulty.hard")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-(--text-muted)">
+                      {t("title.cpuTurnOrderLabel")}
+                    </span>
+                    <Select
+                      value={cpuTurnOrder}
+                      onValueChange={(v) => setCpuTurnOrder(v as CpuTurnOrder)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="random">
+                          {t("title.cpuTurnOrder.random")}
+                        </SelectItem>
+                        <SelectItem value="first">
+                          {t("title.cpuTurnOrder.first")}
+                        </SelectItem>
+                        <SelectItem value="second">
+                          {t("title.cpuTurnOrder.second")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-(--text-muted)">
+                      {t("title.cpuStyleLabel")}
+                    </span>
+                    <Select
+                      value={cpuStyle}
+                      onValueChange={(v) => setCpuStyle(v as CpuStyle)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rush">
+                          {t("title.cpuStyle.rush")}
+                        </SelectItem>
+                        <SelectItem value="balanced">
+                          {t("title.cpuStyle.balanced")}
+                        </SelectItem>
+                        <SelectItem value="guard">
+                          {t("title.cpuStyle.guard")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-(--text-muted)">
+                      {t("title.cpuRiskLabel")}
+                    </span>
+                    <Select
+                      value={cpuRisk}
+                      onValueChange={(v) => setCpuRisk(v as CpuRisk)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="safe">
+                          {t("title.cpuRisk.safe")}
+                        </SelectItem>
+                        <SelectItem value="balanced">
+                          {t("title.cpuRisk.balanced")}
+                        </SelectItem>
+                        <SelectItem value="bold">
+                          {t("title.cpuRisk.bold")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : null}
+              <Button
+                type="button"
+                className="w-full"
+                variant="local"
+                onClick={() => {
+                  void navigate({
+                    to: "/cpu",
+                    search: {
+                      difficulty: cpuDifficulty,
+                      style: cpuStyle,
+                      risk: cpuRisk,
+                      turnOrder: cpuTurnOrder,
+                    },
+                  });
+                }}
+              >
+                {t("title.cpuStart")}
+              </Button>
             </CardContent>
           </Card>
         </div>

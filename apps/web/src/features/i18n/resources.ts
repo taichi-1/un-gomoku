@@ -29,6 +29,9 @@ export const resources = {
         localDescription: "近くの人と対戦",
         cpuTitle: "CPU対戦",
         cpuDescription: "CPUと1人で対戦",
+        cpuRandomize: "CPU設定をランダムにする",
+        cpuSettingsExpand: "CPU設定を開く",
+        cpuSettingsCollapse: "CPU設定を閉じる",
         cpuStart: "対戦開始",
         cpuDifficultyLabel: "強さ",
         cpuDifficulty: {
@@ -36,11 +39,17 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuPersonalityLabel: "スタイル",
-        cpuPersonality: {
-          aggressive: "攻め型",
-          balanced: "バランス型",
-          defensive: "守り型",
+        cpuStyleLabel: "スタイル",
+        cpuStyle: {
+          rush: "アタッカー",
+          balanced: "バランサー",
+          guard: "ディフェンダー",
+        },
+        cpuRiskLabel: "リスク",
+        cpuRisk: {
+          safe: "マジメ",
+          balanced: "スタンダード",
+          bold: "ギャンブラー",
         },
         cpuTurnOrderLabel: "手番",
         cpuTurnOrder: {
@@ -81,10 +90,15 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuPersonalityDisplay: {
-          aggressive: "攻め型",
-          balanced: "バランス型",
-          defensive: "守り型",
+        cpuStyleDisplay: {
+          rush: "アタッカー",
+          balanced: "バランサー",
+          guard: "ディフェンダー",
+        },
+        cpuRiskDisplay: {
+          safe: "マジメ",
+          balanced: "スタンダード",
+          bold: "ギャンブラー",
         },
         rematch: "もう一局",
         luckFeedback: {
@@ -167,6 +181,9 @@ export const resources = {
         localDescription: "Play together on one device",
         cpuTitle: "vs CPU",
         cpuDescription: "Play solo against the CPU",
+        cpuRandomize: "Randomize CPU settings",
+        cpuSettingsExpand: "Show CPU settings",
+        cpuSettingsCollapse: "Hide CPU settings",
         cpuStart: "Start Match",
         cpuDifficultyLabel: "Difficulty",
         cpuDifficulty: {
@@ -174,11 +191,17 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuPersonalityLabel: "Style",
-        cpuPersonality: {
-          aggressive: "Attacker",
-          balanced: "Balanced",
-          defensive: "Defender",
+        cpuStyleLabel: "Style",
+        cpuStyle: {
+          rush: "Attacker",
+          balanced: "Balancer",
+          guard: "Defender",
+        },
+        cpuRiskLabel: "Risk",
+        cpuRisk: {
+          safe: "Serious",
+          balanced: "Standard",
+          bold: "Gambler",
         },
         cpuTurnOrderLabel: "Turn order",
         cpuTurnOrder: {
@@ -219,10 +242,15 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuPersonalityDisplay: {
-          aggressive: "Attacker",
-          balanced: "Balanced",
-          defensive: "Defender",
+        cpuStyleDisplay: {
+          rush: "Attacker",
+          balanced: "Balancer",
+          guard: "Defender",
+        },
+        cpuRiskDisplay: {
+          safe: "Serious",
+          balanced: "Standard",
+          bold: "Gambler",
         },
         rematch: "Rematch",
         luckFeedback: {
