@@ -22,6 +22,7 @@ export function generateCandidateCells(
   maxCells: number,
   attackWeight: number,
   defenseWeight: number,
+  threatBlockWeight: number,
 ): Coordinate[] {
   // Special case: empty board → centre cell
   if (isBoardEmpty(board)) {
@@ -68,6 +69,7 @@ export function generateCandidateCells(
       player,
       attackWeight,
       defenseWeight,
+      threatBlockWeight,
     ),
   }));
   scored.sort((a, b) => b.score - a.score);

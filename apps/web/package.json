@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "bench:cpu": "bun run src/features/game/lib/cpu/benchmark.ts"
   },
   "dependencies": {
     "@pkg/core": "workspace:*",

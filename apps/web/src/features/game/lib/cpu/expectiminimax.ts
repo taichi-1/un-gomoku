@@ -39,6 +39,7 @@ export function computeBestMove(
     config.maxCandidateCells,
     config.attackWeight,
     config.defenseWeight,
+    config.threatBlockWeight,
   );
 
   if (rankedCells.length === 0) {
@@ -67,9 +68,10 @@ export function computeBestMove(
       Infinity,
       config,
     );
+    const adjusted = ev + candidateCountBias(config, n);
 
-    if (ev > bestValue) {
-      bestValue = ev;
+    if (adjusted > bestValue) {
+      bestValue = adjusted;
       bestCount = n;
     }
   }
@@ -102,6 +104,7 @@ function chanceNode(
       config.evaluationNoise,
       config.attackWeight,
       config.defenseWeight,
+      config.threatBlockWeight,
     );
   } else {
     const nextPlayer = getNextPlayer(currentPlayer);
@@ -130,6 +133,7 @@ function chanceNode(
         config.evaluationNoise,
         config.attackWeight,
         config.defenseWeight,
+        config.threatBlockWeight,
       );
       continue;
     }
@@ -159,7 +163,14 @@ function chanceNode(
   }
 
   const successAvg = successSum / n;
-  return successProb * successAvg + failureProb * failureValue;
+  const expected = successProb * successAvg + failureProb * failureValue;
+  if (currentPlayer !== cpuPlayer || config.riskAversion <= 0) {
+    return expected;
+  }
+
+  const downside = Math.max(0, successAvg - failureValue);
+  const riskPenalty = config.riskAversion * failureProb * downside;
+  return expected - riskPenalty;
 }
 
 // ── MAX node (CPU's turn) ──
@@ -179,6 +190,7 @@ function maxNode(
     config.maxCandidateCells,
     config.attackWeight,
     config.defenseWeight,
+    config.threatBlockWeight,
   );
   if (cells.length === 0) {
     return evaluateBoard(
@@ -187,6 +199,7 @@ function maxNode(
       config.evaluationNoise,
       config.attackWeight,
       config.defenseWeight,
+      config.threatBlockWeight,
     );
   }
 
@@ -206,7 +219,8 @@ function maxNode(
       config,
     );
 
-    if (ev > best) best = ev;
+    const adjusted = ev + candidateCountBias(config, n);
+    if (adjusted > best) best = adjusted;
     if (best > alpha) alpha = best;
     if (alpha >= beta) break; // beta cutoff
   }
@@ -231,6 +245,7 @@ function minNode(
     config.maxCandidateCells,
     config.attackWeight,
     config.defenseWeight,
+    config.threatBlockWeight,
   );
   if (cells.length === 0) {
     return evaluateBoard(
@@ -239,6 +254,7 @@ function minNode(
       config.evaluationNoise,
       config.attackWeight,
       config.defenseWeight,
+      config.threatBlockWeight,
     );
   }
 
@@ -264,4 +280,8 @@ function minNode(
   }
 
   return best;
+}
+
+function candidateCountBias(config: CpuConfig, candidateCount: number): number {
+  return config.candidateCountBias[candidateCount - 1] ?? 0;
 }
