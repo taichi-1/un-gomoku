@@ -20,6 +20,8 @@ export function generateCandidateCells(
   board: BoardState,
   player: PlayerId,
   maxCells: number,
+  attackWeight: number,
+  defenseWeight: number,
 ): Coordinate[] {
   // Special case: empty board → centre cell
   if (isBoardEmpty(board)) {
@@ -60,7 +62,13 @@ export function generateCandidateCells(
   // Rank by placement potential and cap
   const scored = cells.map((coord) => ({
     coord,
-    score: scoreCellPlacement(board, coord, player),
+    score: scoreCellPlacement(
+      board,
+      coord,
+      player,
+      attackWeight,
+      defenseWeight,
+    ),
   }));
   scored.sort((a, b) => b.score - a.score);
 
