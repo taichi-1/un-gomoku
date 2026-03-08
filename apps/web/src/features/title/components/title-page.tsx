@@ -92,10 +92,11 @@ export function TitlePage() {
 
   return (
     <main className="min-h-dvh w-full p-4">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-36">
+      <div className="mx-auto flex w-full max-w-3xl flex-col">
         <AppHeader showBrand={false} rules={rules} />
 
-        <div className="flex flex-col gap-4 py-2 sm:py-4">
+        {/* Keep title content offset responsive; avoid fixed large top gaps on small screens. */}
+        <div className="flex flex-col gap-3 pt-[clamp(0.25rem,3vh,1.5rem)] pb-2 sm:gap-4 sm:pt-[clamp(1.5rem,12vh,9rem)] sm:pb-4">
           <section className="space-y-2 px-2 text-center">
             <h1 className="font-display text-4xl font-bold tracking-tight text-(--text-strong) sm:text-5xl">
               {t("title.heading")}
