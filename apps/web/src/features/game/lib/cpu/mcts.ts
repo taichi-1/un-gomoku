@@ -154,6 +154,7 @@ export function computeBestMove(
     backpropagate(rolloutNode, result);
 
     iterations++;
+    // Check time budget every 50 iterations to avoid expensive Date.now() calls
   } while (iterations % 50 !== 0 || Date.now() < deadline);
 
   // 6. Choose the count N with the most visits among root's children
