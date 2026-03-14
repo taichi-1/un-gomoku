@@ -5,7 +5,9 @@
  * by running MCTS within a time budget.
  */
 
+import { placeStone } from "@pkg/core/board";
 import { getNextPlayer } from "@pkg/core/game-state";
+import { SUCCESS_PROBABILITY } from "@pkg/shared/constants";
 import type { BoardState, Coordinate, PlayerId } from "@pkg/shared/schemas";
 import type { CpuConfig } from "./config";
 import { generateCandidateCells } from "./move-generator";
@@ -57,17 +59,32 @@ function select(root: MctsNode, explorationC: number): MctsNode {
 
 /**
  * Expands the node by picking a random untried count, creating a child node.
+ * Simulates the probabilistic chance outcome based on the count.
  */
-function expand(node: MctsNode): MctsNode {
+function expand(node: MctsNode, config: CpuConfig): MctsNode {
   const idx = Math.floor(Math.random() * node.untriedCounts.length);
   const count = node.untriedCounts[idx]!;
   // Remove the chosen count from untried list
   node.untriedCounts.splice(idx, 1);
 
-  // Child node: same board (rollout handles probabilistic outcomes),
-  // next player's turn
-  const child = createMctsNode(
+  // Get fresh candidate cells for this node's board/player
+  const candidates = generateCandidateCells(
     node.board,
+    node.currentPlayer,
+    config.maxCandidateCells,
+  ).slice(0, count);
+
+  // Simulate probabilistic chance outcome
+  const prob = SUCCESS_PROBABILITY[count] ?? 0.5;
+  let childBoard = node.board;
+  if (candidates.length > 0 && Math.random() < prob) {
+    const cell = candidates[Math.floor(Math.random() * candidates.length)]!;
+    childBoard = placeStone(node.board, cell, node.currentPlayer);
+  }
+  // Failure case: childBoard stays as node.board, turn passes
+
+  const child = createMctsNode(
+    childBoard,
     getNextPlayer(node.currentPlayer),
     node,
     count,
@@ -142,7 +159,7 @@ export function computeBestMove(
 
     if (selected.untriedCounts.length > 0) {
       // Expansion: create a new child for an untried count
-      rolloutNode = expand(selected);
+      rolloutNode = expand(selected, config);
     } else {
       // Fully expanded leaf — rollout from here
       rolloutNode = selected;
