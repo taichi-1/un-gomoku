@@ -76,22 +76,12 @@ const cpuRoute = createRoute({
     const d = String(search.difficulty ?? "medium");
     const t = String(search.turnOrder ?? "random");
     const rawPersona = String(search.persona ?? "");
-    const legacyStyle = String(search.style ?? "");
-    const legacyRisk = String(search.risk ?? "");
-    const fallbackPersona =
-      legacyRisk === "bold"
-        ? "gambler"
-        : legacyStyle === "guard"
-          ? "defender"
-          : legacyStyle === "rush"
-            ? "attacker"
-            : "attacker";
     return {
       difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "medium",
       turnOrder: VALID_TURN_ORDERS.has(t) ? (t as CpuTurnOrder) : "random",
       persona: VALID_PERSONAS.has(rawPersona)
         ? (rawPersona as CpuPersona)
-        : (fallbackPersona as CpuPersona),
+        : "attacker",
     };
   },
   component: CpuGameRouteComponent,
