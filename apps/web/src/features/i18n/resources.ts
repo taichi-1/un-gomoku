@@ -39,17 +39,11 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuStyleLabel: "スタイル",
-        cpuStyle: {
-          rush: "アタッカー",
-          balanced: "バランサー",
-          guard: "ディフェンダー",
-        },
-        cpuRiskLabel: "リスク",
-        cpuRisk: {
-          safe: "マジメ",
-          balanced: "スタンダード",
-          bold: "ギャンブラー",
+        cpuPersonaLabel: "人格",
+        cpuPersona: {
+          attacker: "アタッカー",
+          defender: "ディフェンダー",
+          gambler: "ギャンブラー",
         },
         cpuTurnOrderLabel: "手番",
         cpuTurnOrder: {
@@ -90,15 +84,10 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuStyleDisplay: {
-          rush: "アタッカー",
-          balanced: "バランサー",
-          guard: "ディフェンダー",
-        },
-        cpuRiskDisplay: {
-          safe: "マジメ",
-          balanced: "スタンダード",
-          bold: "ギャンブラー",
+        cpuPersonaDisplay: {
+          attacker: "アタッカー",
+          defender: "ディフェンダー",
+          gambler: "ギャンブラー",
         },
         rematch: "もう一局",
         luckFeedback: {
@@ -191,17 +180,11 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuStyleLabel: "Style",
-        cpuStyle: {
-          rush: "Attacker",
-          balanced: "Balancer",
-          guard: "Defender",
-        },
-        cpuRiskLabel: "Risk",
-        cpuRisk: {
-          safe: "Serious",
-          balanced: "Standard",
-          bold: "Gambler",
+        cpuPersonaLabel: "Persona",
+        cpuPersona: {
+          attacker: "Attacker",
+          defender: "Defender",
+          gambler: "Gambler",
         },
         cpuTurnOrderLabel: "Turn order",
         cpuTurnOrder: {
@@ -242,15 +225,10 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuStyleDisplay: {
-          rush: "Attacker",
-          balanced: "Balancer",
-          guard: "Defender",
-        },
-        cpuRiskDisplay: {
-          safe: "Serious",
-          balanced: "Standard",
-          bold: "Gambler",
+        cpuPersonaDisplay: {
+          attacker: "Attacker",
+          defender: "Defender",
+          gambler: "Gambler",
         },
         rematch: "Rematch",
         luckFeedback: {

@@ -1,17 +1,24 @@
 /**
- * CPU difficulty configuration.
+ * CPU difficulty and persona configuration.
  *
- * Adjust numbers here to tune AI behaviour per difficulty level.
- * Every other CPU module reads from this file — no magic numbers elsewhere.
+ * The CPU now uses a single persona axis:
+ * - attacker: pushes its own initiative
+ * - defender: prioritizes not losing
+ * - gambler: narrows candidates only when there is a real forcing line
  */
 
 export type CpuDifficulty = "easy" | "medium" | "hard";
 
 export type CpuTurnOrder = "first" | "second" | "random";
 
-export type CpuStyle = "rush" | "balanced" | "guard";
+export type CpuPersona = "attacker" | "defender" | "gambler";
 
-export type CpuRisk = "safe" | "balanced" | "bold";
+export type CpuSituation =
+  | "immediateWin"
+  | "mustBlockWin"
+  | "attackReach"
+  | "blockReach"
+  | "neutral";
 
 /** Bias added to evaluation by candidate count index 1..5. */
 export type CandidateCountBias = readonly [
@@ -35,27 +42,33 @@ export interface CpuConfig {
   candidateSelectionIntervalMs: number;
   /** Pause in ms after all candidates are shown, before turn resolution. */
   postSelectionPauseMs: number;
+  /** CPU persona. */
+  persona: CpuPersona;
   /** Weight applied to CPU's own score in evaluation (higher = more aggressive). */
   attackWeight: number;
   /** Weight applied to opponent's score in evaluation (higher = more defensive). */
   defenseWeight: number;
-  /** Preference over candidate count choices (index 0 == 1 candidate, 4 == 5 candidates). */
-  candidateCountBias: CandidateCountBias;
+  /** Preference over candidate count choices by tactical situation. */
+  candidateCountBias: Record<CpuSituation, CandidateCountBias>;
   /** Extra penalty on high failure-risk choices (higher = safer play). */
   riskAversion: number;
   /** Emphasis on immediate threat/opportunity terms during board evaluation. */
   threatBlockWeight: number;
+  /** Value of having more stones on the board than the opponent. */
+  stoneAdvantageWeight: number;
 }
 
 export const CPU_CONFIGS: Record<
   CpuDifficulty,
   Omit<
     CpuConfig,
+    | "persona"
     | "attackWeight"
     | "defenseWeight"
     | "candidateCountBias"
     | "riskAversion"
     | "threatBlockWeight"
+    | "stoneAdvantageWeight"
   >
 > = {
   easy: {
@@ -84,48 +97,61 @@ export const CPU_CONFIGS: Record<
   },
 };
 
-export const CPU_STYLE_CONFIGS: Record<
-  CpuStyle,
-  {
-    attackWeight: number;
-    defenseWeight: number;
-    threatBlockWeight: number;
-  }
+export const CPU_PERSONA_CONFIGS: Record<
+  CpuPersona,
+  Omit<
+    CpuConfig,
+    | "searchDepth"
+    | "maxCandidateCells"
+    | "evaluationNoise"
+    | "thinkingDelayMs"
+    | "candidateSelectionIntervalMs"
+    | "postSelectionPauseMs"
+  >
 > = {
-  rush: {
-    attackWeight: 1.4,
-    defenseWeight: 0.9,
-    threatBlockWeight: 0.95,
+  attacker: {
+    persona: "attacker",
+    attackWeight: 1.32,
+    defenseWeight: 1.04,
+    threatBlockWeight: 1.18,
+    riskAversion: 0.26,
+    stoneAdvantageWeight: 1_800,
+    candidateCountBias: {
+      immediateWin: [11_000, 5_000, 1_500, -1_500, -4_000],
+      mustBlockWin: [9_000, 4_200, 1_200, -1_600, -4_200],
+      attackReach: [2_400, 4_500, 4_800, 2_800, 600],
+      blockReach: [1_000, 2_200, 2_900, 2_100, 900],
+      neutral: [200, 1_400, 2_800, 4_400, 5_600],
+    },
   },
-  balanced: {
-    attackWeight: 1.08,
-    defenseWeight: 1.15,
-    threatBlockWeight: 1.25,
-  },
-  guard: {
-    attackWeight: 0.86,
-    defenseWeight: 1.45,
+  defender: {
+    persona: "defender",
+    attackWeight: 1.02,
+    defenseWeight: 1.4,
     threatBlockWeight: 1.6,
+    riskAversion: 0.52,
+    stoneAdvantageWeight: 2_100,
+    candidateCountBias: {
+      immediateWin: [10_000, 4_500, 1_000, -1_800, -4_500],
+      mustBlockWin: [13_000, 5_200, 600, -2_600, -6_000],
+      attackReach: [500, 1_800, 3_000, 4_200, 4_800],
+      blockReach: [2_400, 4_000, 4_600, 3_000, 1_200],
+      neutral: [600, 1_800, 3_600, 5_400, 7_000],
+    },
   },
-};
-
-export const CPU_RISK_CONFIGS: Record<
-  CpuRisk,
-  {
-    candidateCountBias: CandidateCountBias;
-    riskAversion: number;
-  }
-> = {
-  safe: {
-    candidateCountBias: [-3_000, -1_500, 1_000, 3_000, 5_000],
-    riskAversion: 0.72,
-  },
-  balanced: {
-    candidateCountBias: [1_000, 1_800, 2_000, 1_500, 800],
-    riskAversion: 0.35,
-  },
-  bold: {
-    candidateCountBias: [6_000, 3_200, 1_000, -1_000, -2_600],
-    riskAversion: 0.12,
+  gambler: {
+    persona: "gambler",
+    attackWeight: 1.26,
+    defenseWeight: 0.98,
+    threatBlockWeight: 1.02,
+    riskAversion: 0.1,
+    stoneAdvantageWeight: 1_600,
+    candidateCountBias: {
+      immediateWin: [14_000, 5_500, -500, -4_000, -7_000],
+      mustBlockWin: [8_000, 2_200, -1_200, -3_500, -6_200],
+      attackReach: [7_000, 4_500, 1_400, -1_800, -4_600],
+      blockReach: [400, 1_600, 2_900, 2_500, 1_000],
+      neutral: [400, 1_800, 3_600, 4_000, 3_200],
+    },
   },
 };
