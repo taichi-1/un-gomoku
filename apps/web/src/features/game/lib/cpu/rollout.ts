@@ -11,7 +11,12 @@ import { checkWinAt } from "@pkg/core/win-detection";
 import { BOARD_SIZE, SUCCESS_PROBABILITY } from "@pkg/shared/constants";
 import type { BoardState, PlayerId } from "@pkg/shared/schemas";
 import type { CpuConfig } from "./config";
-import { detectDecisiveMoment, evaluateBoard, longestSequence, WIN_SCORE } from "./evaluation";
+import {
+  detectDecisiveMoment,
+  evaluateBoard,
+  longestSequence,
+  WIN_SCORE,
+} from "./evaluation";
 import { generateCandidateCells } from "./move-generator";
 
 // ── Internal helpers ──

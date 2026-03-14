@@ -211,10 +211,7 @@ export function detectDecisiveMoment(
  * Finds the empty cell that would complete an open-4 run to 5 for the given player.
  * Returns the coordinate of that empty cell, or null if no such run exists.
  */
-function findOpen4Cell(
-  board: BoardState,
-  player: PlayerId,
-): Coordinate | null {
+function findOpen4Cell(board: BoardState, player: PlayerId): Coordinate | null {
   for (const [dx, dy] of DIRECTIONS) {
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
@@ -277,8 +274,7 @@ export function scoreCellPlacement(
   const createsWin = wouldCreateWinByPlacement(board, coord, player);
   const blocksWin = wouldCreateWinByPlacement(board, coord, opponent);
   const tactical =
-    (createsWin ? WIN_SCORE * 0.85 : 0) +
-    (blocksWin ? WIN_SCORE * 0.65 : 0);
+    (createsWin ? WIN_SCORE * 0.85 : 0) + (blocksWin ? WIN_SCORE * 0.65 : 0);
 
   return offence + defence + tactical;
 }

@@ -31,8 +31,7 @@ function ucb1(node: MctsNode, explorationC: number): number {
   if (node.visits === 0) return Infinity;
   const exploitation = node.wins / node.visits;
   const exploration =
-    explorationC *
-    Math.sqrt(Math.log(node.parent!.visits) / node.visits);
+    explorationC * Math.sqrt(Math.log(node.parent?.visits) / node.visits);
   return exploitation + exploration;
 }
 
@@ -43,13 +42,23 @@ function ucb1(node: MctsNode, explorationC: number): number {
 function select(root: MctsNode, explorationC: number): MctsNode {
   let node = root;
   while (node.untriedCounts.length === 0 && node.children.length > 0) {
-    let best = node.children[0]!;
+    const firstChild = node.children[0];
+    if (!firstChild) {
+      break;
+    }
+
+    let best = firstChild;
     let bestScore = ucb1(best, explorationC);
     for (let i = 1; i < node.children.length; i++) {
-      const score = ucb1(node.children[i]!, explorationC);
+      const child = node.children[i];
+      if (!child) {
+        continue;
+      }
+
+      const score = ucb1(child, explorationC);
       if (score > bestScore) {
         bestScore = score;
-        best = node.children[i]!;
+        best = child;
       }
     }
     node = best;
@@ -63,7 +72,11 @@ function select(root: MctsNode, explorationC: number): MctsNode {
  */
 function expand(node: MctsNode, config: CpuConfig): MctsNode {
   const idx = Math.floor(Math.random() * node.untriedCounts.length);
-  const count = node.untriedCounts[idx]!;
+  const count = node.untriedCounts[idx];
+  if (count === undefined) {
+    return node;
+  }
+
   // Remove the chosen count from untried list
   node.untriedCounts.splice(idx, 1);
 
@@ -78,8 +91,10 @@ function expand(node: MctsNode, config: CpuConfig): MctsNode {
   const prob = SUCCESS_PROBABILITY[count] ?? 0.5;
   let childBoard = node.board;
   if (candidates.length > 0 && Math.random() < prob) {
-    const cell = candidates[Math.floor(Math.random() * candidates.length)]!;
-    childBoard = placeStone(node.board, cell, node.currentPlayer);
+    const cell = candidates[Math.floor(Math.random() * candidates.length)];
+    if (cell) {
+      childBoard = placeStone(node.board, cell, node.currentPlayer);
+    }
   }
   // Failure case: childBoard stays as node.board, turn passes
 
@@ -107,7 +122,13 @@ function backpropagate(
     current.visits += 1;
     // Win from this node's perspective: is the result favorable for the player moving here?
     const fromCpuPerspective = current.currentPlayer === cpuPlayer;
-    current.wins += fromCpuPerspective ? (result > 0 ? 1 : 0) : (result < 0 ? 1 : 0);
+    current.wins += fromCpuPerspective
+      ? result > 0
+        ? 1
+        : 0
+      : result < 0
+        ? 1
+        : 0;
     current = current.parent;
   }
 }
@@ -184,10 +205,16 @@ export function computeBestMove(
   // 6. Choose the count N with the most visits among root's children
   let bestCount = 3; // fallback if no children
   if (root.children.length > 0) {
-    let bestChild = root.children[0]!;
+    const firstChild = root.children[0];
+    if (!firstChild) {
+      return { candidates: rankedCells.slice(0, bestCount) };
+    }
+
+    let bestChild = firstChild;
     for (let i = 1; i < root.children.length; i++) {
-      if ((root.children[i]?.visits ?? 0) > bestChild.visits) {
-        bestChild = root.children[i]!;
+      const child = root.children[i];
+      if ((child?.visits ?? 0) > bestChild.visits && child) {
+        bestChild = child;
       }
     }
     // candidateCount is the count chosen — clamp to valid range

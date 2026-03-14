@@ -40,7 +40,11 @@ const CPU_TURN_ORDER_OPTIONS: readonly CpuTurnOrder[] = [
   "second",
   "random",
 ];
-const CPU_ARCHETYPE_OPTIONS: readonly CpuArchetype[] = ["attacker", "guardian", "gambler"];
+const CPU_ARCHETYPE_OPTIONS: readonly CpuArchetype[] = [
+  "attacker",
+  "guardian",
+  "gambler",
+];
 
 function pickRandom<T>(values: readonly T[]): T {
   return values[Math.floor(Math.random() * values.length)] as T;

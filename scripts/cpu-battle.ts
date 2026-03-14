@@ -7,11 +7,6 @@
  *   bun scripts/cpu-battle.ts --games 500 --mode cross
  */
 
-import { placeStone } from "../packages/core/board";
-import { getNextPlayer } from "../packages/core/game-state";
-import { checkWinAt } from "../packages/core/win-detection";
-import { BOARD_SIZE, SUCCESS_PROBABILITY } from "../packages/shared/constants";
-import type { BoardState, Coordinate, PlayerId } from "../packages/shared/schemas/index";
 import {
   ARCHETYPE_CONFIGS,
   CPU_CONFIGS,
@@ -20,10 +15,18 @@ import {
   type CpuDifficulty,
   computeBestMove,
 } from "../apps/web/src/features/game/lib/cpu/index";
+import { placeStone } from "../packages/core/board";
+import { getNextPlayer } from "../packages/core/game-state";
+import { checkWinAt } from "../packages/core/win-detection";
+import { BOARD_SIZE, SUCCESS_PROBABILITY } from "../packages/shared/constants";
+import type { BoardState, PlayerId } from "../packages/shared/schemas/index";
 
 // ── Config helpers ──
 
-function makeConfig(difficulty: CpuDifficulty, archetype: CpuArchetype): CpuConfig {
+function makeConfig(
+  difficulty: CpuDifficulty,
+  archetype: CpuArchetype,
+): CpuConfig {
   return {
     ...CPU_CONFIGS[difficulty],
     ...ARCHETYPE_CONFIGS[archetype],
@@ -77,7 +80,10 @@ function simulateGame(config1: CpuConfig, config2: CpuConfig): GameResult {
     if (success) {
       // Pick a random candidate from the list
       const chosenIdx = Math.floor(Math.random() * candidates.length);
-      const chosen: Coordinate = candidates[chosenIdx] ?? candidates[0]!;
+      const chosen = candidates[chosenIdx] ?? candidates[0];
+      if (!chosen) {
+        return "draw";
+      }
 
       board = placeStone(board, chosen, currentPlayer);
 
@@ -143,14 +149,20 @@ function runDifficultyMode(games: number): void {
 
   const hardWinRate = (result.cpu1Wins / result.total) * 100;
 
-  console.log(`Hard wins: ${result.cpu1Wins} (${pct(result.cpu1Wins, result.total)}%)`);
-  console.log(`Easy wins: ${result.cpu2Wins} (${pct(result.cpu2Wins, result.total)}%)`);
+  console.log(
+    `Hard wins: ${result.cpu1Wins} (${pct(result.cpu1Wins, result.total)}%)`,
+  );
+  console.log(
+    `Easy wins: ${result.cpu2Wins} (${pct(result.cpu2Wins, result.total)}%)`,
+  );
   console.log(`Draws: ${result.draws} (${pct(result.draws, result.total)}%)`);
 
   if (hardWinRate > 70) {
     console.log(`Result: ✅ PASS (Hard win rate > 70%)`);
   } else {
-    console.log(`Result: ❌ FAIL (Hard win rate ${hardWinRate.toFixed(1)}% ≤ 70%)`);
+    console.log(
+      `Result: ❌ FAIL (Hard win rate ${hardWinRate.toFixed(1)}% ≤ 70%)`,
+    );
   }
 }
 
@@ -159,7 +171,7 @@ function runArchetypeMode(games: number): void {
 
   // "Balanced" = medium difficulty with explorationC=1.0
   const balanced: CpuConfig = {
-    ...CPU_CONFIGS["medium"],
+    ...CPU_CONFIGS.medium,
     explorationC: 1.0,
     decisiveThreshold: 0,
     archetype: "guardian",
@@ -190,7 +202,9 @@ function runArchetypeMode(games: number): void {
 }
 
 function runCrossMode(games: number): void {
-  console.log(`\n=== Cross Mode: All archetypes vs all (medium difficulty) ===`);
+  console.log(
+    `\n=== Cross Mode: All archetypes vs all (medium difficulty) ===`,
+  );
 
   const matchups: [CpuArchetype, CpuArchetype][] = [
     ["attacker", "guardian"],
@@ -236,14 +250,15 @@ function parseArgs(): { games: number; mode: string } {
   let mode = "difficulty";
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--games" && args[i + 1]) {
-      const parsed = parseInt(args[i + 1]!, 10);
-      if (!isNaN(parsed) && parsed > 0) {
+    const nextArg = args[i + 1];
+    if (args[i] === "--games" && nextArg) {
+      const parsed = parseInt(nextArg, 10);
+      if (!Number.isNaN(parsed) && parsed > 0) {
         games = parsed;
         i++;
       }
-    } else if (args[i] === "--mode" && args[i + 1]) {
-      mode = args[i + 1]!;
+    } else if (args[i] === "--mode" && nextArg) {
+      mode = nextArg;
       i++;
     }
   }

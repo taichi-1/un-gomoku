@@ -6,4 +6,4 @@ export {
   type CpuDifficulty,
   type CpuTurnOrder,
 } from "./config";
-export { computeBestMove, type CpuMoveResult } from "./mcts";
+export { type CpuMoveResult, computeBestMove } from "./mcts";

@@ -94,8 +94,7 @@ export function useCpuGameSession(
     (updater: (current: GameSessionSnapshot) => GameSessionSnapshot): void => {
       queryClient.setQueryData<GameSessionSnapshot>(queryKey, (current) =>
         updater(
-          current ??
-            createInitialCpuSnapshot(turnOrder, difficulty, archetype),
+          current ?? createInitialCpuSnapshot(turnOrder, difficulty, archetype),
         ),
       );
     },
@@ -311,14 +310,7 @@ export function useCpuGameSession(
       queryKey,
       createInitialCpuSnapshot(turnOrder, difficulty, archetype),
     );
-  }, [
-    clearCpuTimers,
-    queryClient,
-    queryKey,
-    turnOrder,
-    difficulty,
-    archetype,
-  ]);
+  }, [clearCpuTimers, queryClient, queryKey, turnOrder, difficulty, archetype]);
 
   return {
     snapshot,
