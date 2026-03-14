@@ -10,12 +10,10 @@ import {
   hasDuplicateCandidates,
 } from "@/features/game/lib/candidate";
 import {
+  ARCHETYPE_CONFIGS,
   CPU_CONFIGS,
-  CPU_RISK_CONFIGS,
-  CPU_STYLE_CONFIGS,
+  type CpuArchetype,
   type CpuDifficulty,
-  type CpuRisk,
-  type CpuStyle,
   type CpuTurnOrder,
   computeBestMove,
 } from "@/features/game/lib/cpu";
@@ -30,22 +28,19 @@ const ANIMATION_ESTIMATED_MS = 1600;
 function createCpuQueryKey(
   difficulty: CpuDifficulty,
   turnOrder: CpuTurnOrder,
-  style: CpuStyle,
-  risk: CpuRisk,
+  archetype: CpuArchetype,
 ) {
   return [
     ...gameSessionQueryKey("cpu", difficulty),
     turnOrder,
-    style,
-    risk,
+    archetype,
   ] as const;
 }
 
 function createInitialCpuSnapshot(
   turnOrder: CpuTurnOrder,
   difficulty: CpuDifficulty,
-  style: CpuStyle,
-  risk: CpuRisk,
+  archetype: CpuArchetype,
 ): GameSessionSnapshot {
   const initialState = createInitialGameState();
   const blackPlayer: PlayerId = "player1";
@@ -73,27 +68,26 @@ function createInitialCpuSnapshot(
     opponentCandidates: [],
     status: "connected",
     statusMessage: null,
-    cpuInfo: { difficulty, style, risk },
+    cpuInfo: { difficulty, archetype },
   };
 }
 
 export function useCpuGameSession(
   difficulty: CpuDifficulty,
   turnOrder: CpuTurnOrder,
-  style: CpuStyle,
-  risk: CpuRisk,
+  archetype: CpuArchetype,
 ): GameController {
   const queryClient = useQueryClient();
   const cpuTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const queryKey = createCpuQueryKey(difficulty, turnOrder, style, risk);
+  const queryKey = createCpuQueryKey(difficulty, turnOrder, archetype);
 
   const { data: snapshot } = useQuery({
     queryKey,
     queryFn: async () =>
-      createInitialCpuSnapshot(turnOrder, difficulty, style, risk),
+      createInitialCpuSnapshot(turnOrder, difficulty, archetype),
     initialData: () =>
-      createInitialCpuSnapshot(turnOrder, difficulty, style, risk),
+      createInitialCpuSnapshot(turnOrder, difficulty, archetype),
   });
 
   const setSnapshot = useCallback(
@@ -101,11 +95,11 @@ export function useCpuGameSession(
       queryClient.setQueryData<GameSessionSnapshot>(queryKey, (current) =>
         updater(
           current ??
-            createInitialCpuSnapshot(turnOrder, difficulty, style, risk),
+            createInitialCpuSnapshot(turnOrder, difficulty, archetype),
         ),
       );
     },
-    [queryClient, queryKey, turnOrder, difficulty, style, risk],
+    [queryClient, queryKey, turnOrder, difficulty, archetype],
   );
 
   const clearCpuTimers = useCallback(() => {
@@ -129,8 +123,8 @@ export function useCpuGameSession(
       const cpuPlayer = gameState.currentPlayer;
       const config = {
         ...CPU_CONFIGS[difficulty],
-        ...CPU_STYLE_CONFIGS[style],
-        ...CPU_RISK_CONFIGS[risk],
+        ...ARCHETYPE_CONFIGS[archetype],
+        archetype,
       };
       const { candidates } = computeBestMove(
         gameState.board,
@@ -190,7 +184,7 @@ export function useCpuGameSession(
 
       cpuTimersRef.current.push(startTimer);
     },
-    [queryClient, queryKey, difficulty, style, risk, setSnapshot],
+    [queryClient, queryKey, difficulty, archetype, setSnapshot],
   );
 
   // ── Auto-trigger CPU turn when it's CPU's turn ──
@@ -315,7 +309,7 @@ export function useCpuGameSession(
     clearCpuTimers();
     queryClient.setQueryData(
       queryKey,
-      createInitialCpuSnapshot(turnOrder, difficulty, style, risk),
+      createInitialCpuSnapshot(turnOrder, difficulty, archetype),
     );
   }, [
     clearCpuTimers,
@@ -323,8 +317,7 @@ export function useCpuGameSession(
     queryKey,
     turnOrder,
     difficulty,
-    style,
-    risk,
+    archetype,
   ]);
 
   return {

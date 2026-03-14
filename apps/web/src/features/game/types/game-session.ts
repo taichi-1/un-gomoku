@@ -1,5 +1,5 @@
 import type { Coordinate, GameStateDTO, PlayerId } from "@pkg/shared/schemas";
-import type { CpuDifficulty, CpuRisk, CpuStyle } from "@/features/game/lib/cpu";
+import type { CpuArchetype, CpuDifficulty } from "@/features/game/lib/cpu";
 
 export type GameMode = "local" | "online" | "cpu";
 
@@ -26,7 +26,7 @@ export interface GameSessionSnapshot {
   opponentCandidates: Coordinate[];
   status: GameSessionStatus;
   statusMessage: string | null;
-  cpuInfo?: { difficulty: CpuDifficulty; style: CpuStyle; risk: CpuRisk };
+  cpuInfo?: { difficulty: CpuDifficulty; archetype: CpuArchetype };
 }
 
 export interface GameController {
