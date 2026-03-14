@@ -13,7 +13,8 @@ import { resolveTurnIndicatorPlayer } from "@/features/game/lib/turn-indicator-p
 import type { GameController } from "@/features/game/types/game-session";
 
 const boardSizeStyle = {
-  "--board-size": "clamp(220px, calc(100vw - 20px), 760px)",
+  "--board-size":
+    "clamp(220px, min(calc(100vw - 20px), calc(100dvh - 280px)), 760px)",
 } as CSSProperties;
 
 interface GamePageProps {
