@@ -11,9 +11,8 @@ import { useCpuGameSession } from "@/features/game/hooks/use-cpu-game-session";
 import { useLocalGameSession } from "@/features/game/hooks/use-local-game-session";
 import { useOnlineGameSession } from "@/features/game/hooks/use-online-game-session";
 import type {
+  CpuArchetype,
   CpuDifficulty,
-  CpuRisk,
-  CpuStyle,
   CpuTurnOrder,
 } from "@/features/game/lib/cpu";
 import { TitlePage } from "@/features/title/components/title-page";
@@ -34,12 +33,11 @@ function LocalGameRouteComponent() {
 
 const VALID_DIFFICULTIES = new Set<string>(["easy", "medium", "hard"]);
 const VALID_TURN_ORDERS = new Set<string>(["first", "second", "random"]);
-const VALID_STYLES = new Set<string>(["rush", "balanced", "guard"]);
-const VALID_RISKS = new Set<string>(["safe", "balanced", "bold"]);
+const VALID_ARCHETYPES = new Set<string>(["attacker", "guardian", "gambler"]);
 
 function CpuGameRouteComponent() {
-  const { difficulty, turnOrder, style, risk } = cpuRoute.useSearch();
-  const controller = useCpuGameSession(difficulty, turnOrder, style, risk);
+  const { difficulty, turnOrder, archetype } = cpuRoute.useSearch();
+  const controller = useCpuGameSession(difficulty, turnOrder, archetype);
   return <GamePage controller={controller} />;
 }
 
@@ -73,18 +71,15 @@ const cpuRoute = createRoute({
   ): {
     difficulty: CpuDifficulty;
     turnOrder: CpuTurnOrder;
-    style: CpuStyle;
-    risk: CpuRisk;
+    archetype: CpuArchetype;
   } => {
     const d = String(search.difficulty ?? "medium");
     const t = String(search.turnOrder ?? "random");
-    const s = String(search.style ?? "balanced");
-    const r = String(search.risk ?? "balanced");
+    const a = String(search.archetype ?? "guardian");
     return {
       difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "medium",
       turnOrder: VALID_TURN_ORDERS.has(t) ? (t as CpuTurnOrder) : "random",
-      style: VALID_STYLES.has(s) ? (s as CpuStyle) : "balanced",
-      risk: VALID_RISKS.has(r) ? (r as CpuRisk) : "balanced",
+      archetype: VALID_ARCHETYPES.has(a) ? (a as CpuArchetype) : "guardian",
     };
   },
   component: CpuGameRouteComponent,

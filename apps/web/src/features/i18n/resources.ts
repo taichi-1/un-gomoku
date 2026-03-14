@@ -39,17 +39,11 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuStyleLabel: "スタイル",
-        cpuStyle: {
-          rush: "アタッカー",
-          balanced: "バランサー",
-          guard: "ディフェンダー",
-        },
-        cpuRiskLabel: "リスク",
-        cpuRisk: {
-          safe: "マジメ",
-          balanced: "スタンダード",
-          bold: "ギャンブラー",
+        cpuArchetypeLabel: "タイプ",
+        cpuArchetype: {
+          attacker: "アタッカー",
+          guardian: "ガーディアン",
+          gambler: "ギャンブラー",
         },
         cpuTurnOrderLabel: "手番",
         cpuTurnOrder: {
@@ -90,15 +84,10 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuStyleDisplay: {
-          rush: "アタッカー",
-          balanced: "バランサー",
-          guard: "ディフェンダー",
-        },
-        cpuRiskDisplay: {
-          safe: "マジメ",
-          balanced: "スタンダード",
-          bold: "ギャンブラー",
+        cpuArchetypeDisplay: {
+          attacker: "アタッカー",
+          guardian: "ガーディアン",
+          gambler: "ギャンブラー",
         },
         rematch: "もう一局",
         luckFeedback: {
@@ -191,17 +180,11 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuStyleLabel: "Style",
-        cpuStyle: {
-          rush: "Attacker",
-          balanced: "Balancer",
-          guard: "Defender",
-        },
-        cpuRiskLabel: "Risk",
-        cpuRisk: {
-          safe: "Serious",
-          balanced: "Standard",
-          bold: "Gambler",
+        cpuArchetypeLabel: "Archetype",
+        cpuArchetype: {
+          attacker: "Attacker",
+          guardian: "Guardian",
+          gambler: "Gambler",
         },
         cpuTurnOrderLabel: "Turn order",
         cpuTurnOrder: {
@@ -242,15 +225,10 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuStyleDisplay: {
-          rush: "Attacker",
-          balanced: "Balancer",
-          guard: "Defender",
-        },
-        cpuRiskDisplay: {
-          safe: "Serious",
-          balanced: "Standard",
-          bold: "Gambler",
+        cpuArchetypeDisplay: {
+          attacker: "Attacker",
+          guardian: "Guardian",
+          gambler: "Gambler",
         },
         rematch: "Rematch",
         luckFeedback: {
