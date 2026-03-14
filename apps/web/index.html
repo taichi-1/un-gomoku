@@ -47,6 +47,15 @@
         root.dataset.theme = theme;
         root.classList.toggle("dark", theme === "dark");
         root.style.colorScheme = theme;
+
+        const bgColor = theme === "dark" ? "#15110d" : "#f6efe3";
+        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (!metaThemeColor) {
+          metaThemeColor = document.createElement("meta");
+          metaThemeColor.name = "theme-color";
+          document.head.appendChild(metaThemeColor);
+        }
+        metaThemeColor.content = bgColor;
       })();
     </script>
     <title>un-gomoku</title>
