@@ -11,7 +11,7 @@ import { checkWinAt } from "@pkg/core/win-detection";
 import { BOARD_SIZE, SUCCESS_PROBABILITY } from "@pkg/shared/constants";
 import type { BoardState, PlayerId } from "@pkg/shared/schemas";
 import type { CpuConfig } from "./config";
-import { detectDecisiveMoment, evaluateBoard, WIN_SCORE } from "./evaluation";
+import { detectDecisiveMoment, evaluateBoard, longestSequence, WIN_SCORE } from "./evaluation";
 import { generateCandidateCells } from "./move-generator";
 
 // ── Internal helpers ──
@@ -25,57 +25,6 @@ function isBoardFull(board: BoardState): boolean {
   return true;
 }
 
-function longestPlayerSequence(board: BoardState, player: PlayerId): number {
-  const DIRECTIONS: readonly [number, number][] = [
-    [1, 0],
-    [0, 1],
-    [1, 1],
-    [1, -1],
-  ];
-
-  let max = 0;
-
-  for (const [dx, dy] of DIRECTIONS) {
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
-        if (board[y]?.[x] !== player) continue;
-
-        // Only start counting at the beginning of a run
-        const prevX = x - dx;
-        const prevY = y - dy;
-        if (
-          prevX >= 0 &&
-          prevX < BOARD_SIZE &&
-          prevY >= 0 &&
-          prevY < BOARD_SIZE &&
-          board[prevY]?.[prevX] === player
-        ) {
-          continue;
-        }
-
-        let count = 0;
-        let cx = x;
-        let cy = y;
-        while (
-          cx >= 0 &&
-          cx < BOARD_SIZE &&
-          cy >= 0 &&
-          cy < BOARD_SIZE &&
-          board[cy]?.[cx] === player
-        ) {
-          count++;
-          cx += dx;
-          cy += dy;
-        }
-
-        if (count > max) max = count;
-      }
-    }
-  }
-
-  return max;
-}
-
 /**
  * Determines the candidate count N for a single rollout step based on the CPU archetype.
  */
@@ -86,7 +35,7 @@ function pickCandidateCount(
 ): number {
   switch (config.archetype) {
     case "attacker": {
-      const longest = longestPlayerSequence(board, currentPlayer);
+      const longest = longestSequence(board, currentPlayer);
       if (longest >= 3) {
         // Bias toward fewer candidates (aggressive exploitation)
         return Math.random() < 0.5 ? 1 : 2;
@@ -156,7 +105,7 @@ export function runRollout(
     if (candidates.length === 0) return 0;
 
     // Probabilistic outcome based on count
-    const prob = SUCCESS_PROBABILITY[candidates.length] ?? SUCCESS_PROBABILITY[n] ?? 0.7;
+    const prob = SUCCESS_PROBABILITY[candidates.length] ?? 0.7;
 
     if (Math.random() < prob) {
       // Success: pick a random cell from candidates and place stone

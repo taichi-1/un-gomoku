@@ -100,7 +100,7 @@ function forEachRun(
 /**
  * Returns the maximum consecutive run length found for player on the board.
  */
-function longestSequence(board: BoardState, player: PlayerId): number {
+export function longestSequence(board: BoardState, player: PlayerId): number {
   let max = 0;
   forEachRun(board, player, ({ count }) => {
     if (count > max) max = count;
