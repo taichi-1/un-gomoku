@@ -102,6 +102,10 @@ body,
   height: 100%;
 }
 
+html {
+  background-color: var(--bg-0);
+}
+
 body {
   margin: 0;
   overflow-x: hidden;
