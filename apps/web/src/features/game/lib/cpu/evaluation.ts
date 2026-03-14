@@ -19,6 +19,8 @@ const DIRECTIONS: readonly [number, number][] = [
 
 // ── Pattern score table ──
 // Index: [count][openEnds]  (count capped at 5, openEnds 0/1/2)
+// Note: PATTERN_SCORE and patternScore serve scoreCellPlacement move-ordering
+// exclusively, not board evaluation.
 
 const PATTERN_SCORE: readonly (readonly number[])[] = [
   /*0*/ [0, 0, 0],
@@ -153,6 +155,9 @@ export const WIN_SCORE = 1_000_000;
 /**
  * Lightweight board evaluation for rollout termination.
  * Returns CPU's longest sequence advantage over opponent (scaled by 100).
+ *
+ * Note: This function is intended for MCTS rollout termination only,
+ * not for expectiminimax leaf node evaluation.
  */
 export function evaluateBoard(board: BoardState, cpuPlayer: PlayerId): number {
   const opponent = getNextPlayer(cpuPlayer);
@@ -172,6 +177,10 @@ export function evaluateBoard(board: BoardState, cpuPlayer: PlayerId): number {
  * - `{ type: null, cell: null }` if neither
  *
  * If both: cpu_wins takes priority.
+ *
+ * Note: If the opponent has a double-open-4 (both ends open), the returned
+ * cell blocks only one end — the position is unblockable. However, the function
+ * still returns the best-effort block cell for move ordering purposes.
  */
 export function detectDecisiveMoment(
   board: BoardState,
