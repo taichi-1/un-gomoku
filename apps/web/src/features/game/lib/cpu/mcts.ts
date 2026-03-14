@@ -23,13 +23,14 @@ export interface CpuMoveResult {
 /**
  * Computes UCB1 score for a node.
  * Unvisited nodes return Infinity so they are always explored first.
+ * Note: This is only called on non-root nodes, so parent is always non-null.
  */
 function ucb1(node: MctsNode, explorationC: number): number {
   if (node.visits === 0) return Infinity;
   const exploitation = node.wins / node.visits;
   const exploration =
     explorationC *
-    Math.sqrt(Math.log((node.parent?.visits ?? 1)) / node.visits);
+    Math.sqrt(Math.log(node.parent!.visits) / node.visits);
   return exploitation + exploration;
 }
 
@@ -77,13 +78,19 @@ function expand(node: MctsNode): MctsNode {
 
 /**
  * Backpropagates the rollout result up the tree.
- * Wins are always tracked from cpuPlayer's perspective.
+ * Wins are tracked from the perspective of the player who will move at each node.
  */
-function backpropagate(node: MctsNode, result: number): void {
+function backpropagate(
+  node: MctsNode,
+  result: number,
+  cpuPlayer: PlayerId,
+): void {
   let current: MctsNode | null = node;
   while (current !== null) {
     current.visits += 1;
-    current.wins += result > 0 ? 1 : 0;
+    // Win from this node's perspective: is the result favorable for the player moving here?
+    const fromCpuPerspective = current.currentPlayer === cpuPlayer;
+    current.wins += fromCpuPerspective ? (result > 0 ? 1 : 0) : (result < 0 ? 1 : 0);
     current = current.parent;
   }
 }
@@ -151,7 +158,7 @@ export function computeBestMove(
     );
 
     // Backpropagation
-    backpropagate(rolloutNode, result);
+    backpropagate(rolloutNode, result, cpuPlayer);
 
     iterations++;
     // Check time budget every 50 iterations to avoid expensive Date.now() calls
