@@ -22,8 +22,7 @@ import {
 } from "@/components/ui/select";
 import type {
   CpuDifficulty,
-  CpuRisk,
-  CpuStyle,
+  CpuPersona,
   CpuTurnOrder,
 } from "@/features/game/lib/cpu";
 import { preloadAllGameSounds } from "@/features/game/sound/game-sound-player";
@@ -41,8 +40,11 @@ const CPU_TURN_ORDER_OPTIONS: readonly CpuTurnOrder[] = [
   "second",
   "random",
 ];
-const CPU_STYLE_OPTIONS: readonly CpuStyle[] = ["rush", "balanced", "guard"];
-const CPU_RISK_OPTIONS: readonly CpuRisk[] = ["safe", "balanced", "bold"];
+const CPU_PERSONA_OPTIONS: readonly CpuPersona[] = [
+  "attacker",
+  "defender",
+  "gambler",
+];
 
 function pickRandom<T>(values: readonly T[]): T {
   return values[Math.floor(Math.random() * values.length)] as T;
@@ -60,8 +62,7 @@ export function TitlePage() {
   const navigate = useNavigate();
   const [joinRoomInput, setJoinRoomInput] = useState("");
   const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("medium");
-  const [cpuStyle, setCpuStyle] = useState<CpuStyle>("balanced");
-  const [cpuRisk, setCpuRisk] = useState<CpuRisk>("balanced");
+  const [cpuPersona, setCpuPersona] = useState<CpuPersona>("attacker");
   const [cpuTurnOrder, setCpuTurnOrder] = useState<CpuTurnOrder>("random");
   const [isCpuSettingsOpen, setIsCpuSettingsOpen] = useState(false);
 
@@ -101,8 +102,7 @@ export function TitlePage() {
   const randomizeCpuSettings = (): void => {
     setCpuDifficulty(pickRandom(CPU_DIFFICULTY_OPTIONS));
     setCpuTurnOrder(pickRandom(CPU_TURN_ORDER_OPTIONS));
-    setCpuStyle(pickRandom(CPU_STYLE_OPTIONS));
-    setCpuRisk(pickRandom(CPU_RISK_OPTIONS));
+    setCpuPersona(pickRandom(CPU_PERSONA_OPTIONS));
   };
 
   const handleJoin = (): void => {
@@ -312,50 +312,26 @@ export function TitlePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="col-span-2 flex flex-col gap-1">
                     <span className="text-xs text-(--text-muted)">
-                      {t("title.cpuStyleLabel")}
+                      {t("title.cpuPersonaLabel")}
                     </span>
                     <Select
-                      value={cpuStyle}
-                      onValueChange={(v) => setCpuStyle(v as CpuStyle)}
+                      value={cpuPersona}
+                      onValueChange={(v) => setCpuPersona(v as CpuPersona)}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="rush">
-                          {t("title.cpuStyle.rush")}
+                        <SelectItem value="attacker">
+                          {t("title.cpuPersona.attacker")}
                         </SelectItem>
-                        <SelectItem value="balanced">
-                          {t("title.cpuStyle.balanced")}
+                        <SelectItem value="defender">
+                          {t("title.cpuPersona.defender")}
                         </SelectItem>
-                        <SelectItem value="guard">
-                          {t("title.cpuStyle.guard")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs text-(--text-muted)">
-                      {t("title.cpuRiskLabel")}
-                    </span>
-                    <Select
-                      value={cpuRisk}
-                      onValueChange={(v) => setCpuRisk(v as CpuRisk)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="safe">
-                          {t("title.cpuRisk.safe")}
-                        </SelectItem>
-                        <SelectItem value="balanced">
-                          {t("title.cpuRisk.balanced")}
-                        </SelectItem>
-                        <SelectItem value="bold">
-                          {t("title.cpuRisk.bold")}
+                        <SelectItem value="gambler">
+                          {t("title.cpuPersona.gambler")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -371,8 +347,7 @@ export function TitlePage() {
                     to: "/cpu",
                     search: {
                       difficulty: cpuDifficulty,
-                      style: cpuStyle,
-                      risk: cpuRisk,
+                      persona: cpuPersona,
                       turnOrder: cpuTurnOrder,
                     },
                   });

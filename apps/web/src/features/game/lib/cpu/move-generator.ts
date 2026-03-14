@@ -1,36 +1,26 @@
 /**
  * Generates and ranks candidate cells for the CPU to consider.
  *
- * Only cells within a short radius of existing stones are "relevant",
- * which reduces the 225-cell board to a manageable 20-40 cells in mid-game.
+ * Opening positions are handled separately so the CPU can submit multiple
+ * central candidates instead of collapsing to a single opening move.
  */
 
 import { BOARD_SIZE } from "@pkg/shared/constants";
 import type { BoardState, Coordinate, PlayerId } from "@pkg/shared/schemas";
+import type { CpuConfig } from "./config";
 import { scoreCellPlacement } from "./evaluation";
 
-/** Neighbourhood expansion radius around occupied cells. */
 const RADIUS = 2;
 
-/**
- * Returns a ranked list of empty cells near existing stones.
- * The list is sorted by heuristic quality (best first) and capped at `maxCells`.
- */
 export function generateCandidateCells(
   board: BoardState,
   player: PlayerId,
-  maxCells: number,
-  attackWeight: number,
-  defenseWeight: number,
-  threatBlockWeight: number,
+  config: CpuConfig,
 ): Coordinate[] {
-  // Special case: empty board → centre cell
   if (isBoardEmpty(board)) {
-    const center = Math.floor(BOARD_SIZE / 2);
-    return [{ x: center, y: center }];
+    return generateOpeningCells(config.maxCandidateCells);
   }
 
-  // Collect occupied positions
   const occupied: Coordinate[] = [];
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
@@ -40,7 +30,6 @@ export function generateCandidateCells(
     }
   }
 
-  // Expand neighbourhood and collect unique empty cells
   const seen = new Set<number>();
   const cells: Coordinate[] = [];
 
@@ -60,21 +49,38 @@ export function generateCandidateCells(
     }
   }
 
-  // Rank by placement potential and cap
   const scored = cells.map((coord) => ({
     coord,
-    score: scoreCellPlacement(
-      board,
-      coord,
-      player,
-      attackWeight,
-      defenseWeight,
-      threatBlockWeight,
-    ),
+    score: scoreCellPlacement(board, coord, player, config),
   }));
   scored.sort((a, b) => b.score - a.score);
 
-  return scored.slice(0, maxCells).map((s) => s.coord);
+  return scored.slice(0, config.maxCandidateCells).map((entry) => entry.coord);
+}
+
+function generateOpeningCells(maxCells: number): Coordinate[] {
+  const center = Math.floor(BOARD_SIZE / 2);
+  const cells: Coordinate[] = [];
+
+  for (let y = center - 1; y <= center + 1; y++) {
+    for (let x = center - 1; x <= center + 1; x++) {
+      cells.push({ x, y });
+    }
+  }
+
+  cells.sort((a, b) => {
+    const distanceA = Math.abs(a.x - center) + Math.abs(a.y - center);
+    const distanceB = Math.abs(b.x - center) + Math.abs(b.y - center);
+    if (distanceA !== distanceB) {
+      return distanceA - distanceB;
+    }
+    if (a.y !== b.y) {
+      return a.y - b.y;
+    }
+    return a.x - b.x;
+  });
+
+  return cells.slice(0, maxCells);
 }
 
 function isBoardEmpty(board: BoardState): boolean {

@@ -1,41 +1,56 @@
-/**
- * Board evaluation heuristic for Gomoku.
- *
- * Scans every consecutive run of same-colour stones on the board,
- * classifies by length + open ends, and sums a pattern score table.
- */
-
+import { placeStone } from "@pkg/core/board";
 import { getNextPlayer } from "@pkg/core/game-state";
+import { checkWinAt } from "@pkg/core/win-detection";
 import { BOARD_SIZE } from "@pkg/shared/constants";
-import type { BoardState, PlayerId } from "@pkg/shared/schemas";
-
-// ── Direction vectors (only "positive" half — we count backward from each run start) ──
+import type { BoardState, Coordinate, PlayerId } from "@pkg/shared/schemas";
+import type { CpuConfig, CpuSituation } from "./config";
 
 const DIRECTIONS: readonly [number, number][] = [
-  [1, 0], // horizontal
-  [0, 1], // vertical
-  [1, 1], // diagonal ↘
-  [1, -1], // diagonal ↗
+  [1, 0],
+  [0, 1],
+  [1, 1],
+  [1, -1],
 ];
-
-// ── Pattern score table ──
-// Index: [count][openEnds]  (count capped at 5, openEnds 0/1/2)
 
 const PATTERN_SCORE: readonly (readonly number[])[] = [
-  /*0*/ [0, 0, 0],
-  /*1*/ [0, 2, 12],
-  /*2*/ [0, 16, 64],
-  /*3*/ [0, 200, 1_100],
-  /*4*/ [0, 6_000, 130_000],
-  /*5*/ [1_000_000, 1_000_000, 1_000_000],
+  [0, 0, 0],
+  [0, 2, 10],
+  [0, 14, 56],
+  [0, 180, 900],
+  [0, 5_500, 90_000],
+  [1_000_000, 1_000_000, 1_000_000],
 ];
 
-function patternScore(count: number, openEnds: number): number {
-  if (count >= 5) return 1_000_000;
-  return PATTERN_SCORE[count]?.[openEnds] ?? 0;
+const REACH_SCORE = 42_000;
+const SETUP_SCORE = 6_800;
+const PRESSURE_SCORE = 900;
+export const WIN_SCORE = 1_000_000;
+
+interface RunInfo {
+  count: number;
+  openEnds: number;
 }
 
-// ── Helpers ──
+interface WindowPatterns {
+  wins: number;
+  reaches: number;
+  setups: number;
+  pressure: number;
+}
+
+export interface MoveTactics {
+  createsWin: boolean;
+  blocksOpponentWin: boolean;
+  createsReachCount: number;
+  blocksOpponentReachCount: number;
+  createsSetupCount: number;
+  blocksOpponentSetupCount: number;
+}
+
+function patternScore(count: number, openEnds: number): number {
+  if (count >= 5) return WIN_SCORE;
+  return PATTERN_SCORE[count]?.[openEnds] ?? 0;
+}
 
 function inBounds(x: number, y: number): boolean {
   return x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
@@ -43,11 +58,6 @@ function inBounds(x: number, y: number): boolean {
 
 function cellAt(board: BoardState, x: number, y: number): string | null {
   return board[y]?.[x] ?? null;
-}
-
-interface RunInfo {
-  count: number;
-  openEnds: number;
 }
 
 function forEachRun(
@@ -60,14 +70,12 @@ function forEachRun(
       for (let x = 0; x < BOARD_SIZE; x++) {
         if (cellAt(board, x, y) !== player) continue;
 
-        // Only process if this cell is the START of a run in this direction
         const prevX = x - dx;
         const prevY = y - dy;
         if (inBounds(prevX, prevY) && cellAt(board, prevX, prevY) === player) {
           continue;
         }
 
-        // Count consecutive stones in the positive direction
         let count = 0;
         let cx = x;
         let cy = y;
@@ -77,13 +85,10 @@ function forEachRun(
           cy += dy;
         }
 
-        // Determine open ends
         let openEnds = 0;
-        // End after the run
         if (inBounds(cx, cy) && cellAt(board, cx, cy) === null) {
           openEnds++;
         }
-        // End before the run
         if (inBounds(prevX, prevY) && cellAt(board, prevX, prevY) === null) {
           openEnds++;
         }
@@ -94,9 +99,7 @@ function forEachRun(
   }
 }
 
-// ── Per-player score (sum of all pattern scores) ──
-
-function scoreForPlayer(board: BoardState, player: PlayerId): number {
+function scoreRunsForPlayer(board: BoardState, player: PlayerId): number {
   let total = 0;
   forEachRun(board, player, ({ count, openEnds }) => {
     total += patternScore(count, openEnds);
@@ -104,101 +107,134 @@ function scoreForPlayer(board: BoardState, player: PlayerId): number {
   return total;
 }
 
-function scoreThreatsForPlayer(board: BoardState, player: PlayerId): number {
+function countStones(board: BoardState, player: PlayerId): number {
   let total = 0;
-  forEachRun(board, player, ({ count, openEnds }) => {
-    if (count >= 5) {
-      total += 220_000;
-      return;
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      if (board[y]?.[x] === player) {
+        total++;
+      }
     }
-    if (count === 4 && openEnds === 2) {
-      total += 95_000;
-      return;
-    }
-    if (count === 4 && openEnds === 1) {
-      total += 52_000;
-      return;
-    }
-    if (count === 3 && openEnds === 2) {
-      total += 13_000;
-    }
-  });
+  }
   return total;
 }
 
-// ── Public API ──
-
-export const WIN_SCORE = 1_000_000;
-
-/**
- * Evaluates the board from `cpuPlayer`'s perspective.
- * Positive = CPU advantage, negative = opponent advantage.
- */
-export function evaluateBoard(
+function collectWindowPatterns(
   board: BoardState,
-  cpuPlayer: PlayerId,
-  noise: number,
-  attackWeight: number,
-  defenseWeight: number,
-  threatBlockWeight: number,
-): number {
-  const opponent = getNextPlayer(cpuPlayer);
-  const cpuScore = scoreForPlayer(board, cpuPlayer);
-  const oppScore = scoreForPlayer(board, opponent);
-  const cpuThreat = scoreThreatsForPlayer(board, cpuPlayer);
-  const oppThreat = scoreThreatsForPlayer(board, opponent);
-
-  const raw =
-    cpuScore * attackWeight -
-    oppScore * defenseWeight +
-    (cpuThreat - oppThreat) * threatBlockWeight;
-
-  if (noise === 0) return raw;
-  return raw * (1 + (Math.random() - 0.5) * noise);
-}
-
-/**
- * Fast single-cell score used for move ordering.
- * Considers how placing a stone at `coord` would contribute to patterns
- * for both the player (offence) and the opponent (defence).
- */
-export function scoreCellPlacement(
-  board: BoardState,
-  coord: { x: number; y: number },
   player: PlayerId,
-  attackWeight: number,
-  defenseWeight: number,
-  threatBlockWeight: number,
-): number {
+): WindowPatterns {
   const opponent = getNextPlayer(player);
-  let offence = 0;
-  let defence = 0;
+  const totals: WindowPatterns = {
+    wins: 0,
+    reaches: 0,
+    setups: 0,
+    pressure: 0,
+  };
 
   for (const [dx, dy] of DIRECTIONS) {
-    offence += lineScore(board, coord, dx, dy, player);
-    defence += lineScore(board, coord, dx, dy, opponent);
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        const endX = x + dx * 4;
+        const endY = y + dy * 4;
+        if (!inBounds(endX, endY)) continue;
+
+        let playerCount = 0;
+        let opponentCount = 0;
+        let emptyCount = 0;
+
+        for (let i = 0; i < 5; i++) {
+          const cell = cellAt(board, x + dx * i, y + dy * i);
+          if (cell === player) {
+            playerCount++;
+          } else if (cell === opponent) {
+            opponentCount++;
+          } else {
+            emptyCount++;
+          }
+        }
+
+        if (playerCount > 0 && opponentCount > 0) continue;
+        if (playerCount === 5) {
+          totals.wins++;
+          continue;
+        }
+        if (opponentCount > 0) continue;
+        if (playerCount === 4 && emptyCount === 1) {
+          totals.reaches++;
+        } else if (playerCount === 3 && emptyCount === 2) {
+          totals.setups++;
+        } else if (playerCount === 2 && emptyCount === 3) {
+          totals.pressure++;
+        }
+      }
+    }
   }
 
-  const createsWin = wouldCreateWinByPlacement(board, coord, player);
-  const blocksWin = wouldCreateWinByPlacement(board, coord, opponent);
-  const tactical =
-    (createsWin ? WIN_SCORE * 0.85 : 0) +
-    (blocksWin ? WIN_SCORE * 0.65 * threatBlockWeight : 0);
-
-  return offence * attackWeight + defence * defenseWeight + tactical;
+  return totals;
 }
 
-/**
- * Scores how a cell contributes to patterns in one direction for one player.
- */
+function collectWindowPatternsAt(
+  board: BoardState,
+  coord: Coordinate,
+  player: PlayerId,
+): WindowPatterns {
+  const opponent = getNextPlayer(player);
+  const totals: WindowPatterns = {
+    wins: 0,
+    reaches: 0,
+    setups: 0,
+    pressure: 0,
+  };
+
+  for (const [dx, dy] of DIRECTIONS) {
+    for (let offset = -4; offset <= 0; offset++) {
+      const startX = coord.x + dx * offset;
+      const startY = coord.y + dy * offset;
+      const endX = startX + dx * 4;
+      const endY = startY + dy * 4;
+      if (!inBounds(startX, startY) || !inBounds(endX, endY)) continue;
+
+      let playerCount = 0;
+      let opponentCount = 0;
+      let emptyCount = 0;
+
+      for (let i = 0; i < 5; i++) {
+        const cell = cellAt(board, startX + dx * i, startY + dy * i);
+        if (cell === player) {
+          playerCount++;
+        } else if (cell === opponent) {
+          opponentCount++;
+        } else {
+          emptyCount++;
+        }
+      }
+
+      if (playerCount > 0 && opponentCount > 0) continue;
+      if (playerCount === 5) {
+        totals.wins++;
+        continue;
+      }
+      if (opponentCount > 0) continue;
+      if (playerCount === 4 && emptyCount === 1) {
+        totals.reaches++;
+      } else if (playerCount === 3 && emptyCount === 2) {
+        totals.setups++;
+      } else if (playerCount === 2 && emptyCount === 3) {
+        totals.pressure++;
+      }
+    }
+  }
+
+  return totals;
+}
+
 function lineScore(
   board: BoardState,
-  coord: { x: number; y: number },
+  coord: Coordinate,
   dx: number,
   dy: number,
   player: PlayerId,
 ): number {
-  // Count consecutive stones in positive direction
   let positive = 0;
   let cx = coord.x + dx;
   let cy = coord.y + dy;
@@ -209,7 +245,6 @@ function lineScore(
   }
   const positiveOpen = inBounds(cx, cy) && cellAt(board, cx, cy) === null;
 
-  // Count consecutive stones in negative direction
   let negative = 0;
   cx = coord.x - dx;
   cy = coord.y - dy;
@@ -220,7 +255,7 @@ function lineScore(
   }
   const negativeOpen = inBounds(cx, cy) && cellAt(board, cx, cy) === null;
 
-  const count = positive + negative + 1; // +1 for the cell itself
+  const count = positive + negative + 1;
   let openEnds = 0;
   if (positiveOpen) openEnds++;
   if (negativeOpen) openEnds++;
@@ -228,38 +263,149 @@ function lineScore(
   return patternScore(count, openEnds);
 }
 
+export function analyzeMoveTactics(
+  board: BoardState,
+  coord: Coordinate,
+  player: PlayerId,
+): MoveTactics {
+  if (!inBounds(coord.x, coord.y) || cellAt(board, coord.x, coord.y) !== null) {
+    return {
+      createsWin: false,
+      blocksOpponentWin: false,
+      createsReachCount: 0,
+      blocksOpponentReachCount: 0,
+      createsSetupCount: 0,
+      blocksOpponentSetupCount: 0,
+    };
+  }
+
+  const opponent = getNextPlayer(player);
+  const nextBoard = placeStone(board, coord, player);
+  const ownPatterns = collectWindowPatternsAt(nextBoard, coord, player);
+  const opponentPatterns = collectWindowPatternsAt(board, coord, opponent);
+
+  return {
+    createsWin: checkWinAt(nextBoard, coord, player),
+    blocksOpponentWin: wouldCreateWinByPlacement(board, coord, opponent),
+    createsReachCount: ownPatterns.reaches,
+    blocksOpponentReachCount: opponentPatterns.reaches,
+    createsSetupCount: ownPatterns.setups,
+    blocksOpponentSetupCount: opponentPatterns.setups,
+  };
+}
+
+export function classifyBoardSituation(
+  board: BoardState,
+  player: PlayerId,
+  candidates: Coordinate[],
+): CpuSituation {
+  let hasImmediateWin = false;
+  let mustBlockWin = false;
+  let hasReachAttack = false;
+  let hasReachBlock = false;
+
+  for (const coord of candidates) {
+    const tactics = analyzeMoveTactics(board, coord, player);
+    if (tactics.createsWin) {
+      hasImmediateWin = true;
+    }
+    if (tactics.blocksOpponentWin) {
+      mustBlockWin = true;
+    }
+    if (tactics.createsReachCount > 0) {
+      hasReachAttack = true;
+    }
+    if (tactics.blocksOpponentReachCount > 0) {
+      hasReachBlock = true;
+    }
+  }
+
+  if (hasImmediateWin) return "immediateWin";
+  if (mustBlockWin) return "mustBlockWin";
+  if (hasReachAttack) return "attackReach";
+  if (hasReachBlock) return "blockReach";
+  return "neutral";
+}
+
+export function evaluateBoard(
+  board: BoardState,
+  cpuPlayer: PlayerId,
+  config: CpuConfig,
+): number {
+  const opponent = getNextPlayer(cpuPlayer);
+  const cpuRunScore = scoreRunsForPlayer(board, cpuPlayer);
+  const opponentRunScore = scoreRunsForPlayer(board, opponent);
+  const cpuWindows = collectWindowPatterns(board, cpuPlayer);
+  const opponentWindows = collectWindowPatterns(board, opponent);
+  const stoneDiff =
+    countStones(board, cpuPlayer) - countStones(board, opponent);
+
+  const raw =
+    cpuRunScore * config.attackWeight -
+    opponentRunScore * config.defenseWeight +
+    stoneDiff * config.stoneAdvantageWeight +
+    (cpuWindows.reaches - opponentWindows.reaches) *
+      REACH_SCORE *
+      config.threatBlockWeight +
+    (cpuWindows.setups - opponentWindows.setups) *
+      SETUP_SCORE *
+      config.threatBlockWeight +
+    (cpuWindows.pressure - opponentWindows.pressure) * PRESSURE_SCORE;
+
+  if (config.evaluationNoise === 0) {
+    return raw;
+  }
+
+  return raw * (1 + (Math.random() - 0.5) * config.evaluationNoise);
+}
+
+export function scoreCellPlacement(
+  board: BoardState,
+  coord: Coordinate,
+  player: PlayerId,
+  config: CpuConfig,
+): number {
+  if (!inBounds(coord.x, coord.y) || cellAt(board, coord.x, coord.y) !== null) {
+    return -Infinity;
+  }
+
+  let structure = 0;
+  for (const [dx, dy] of DIRECTIONS) {
+    structure +=
+      lineScore(board, coord, dx, dy, player) * config.attackWeight +
+      lineScore(board, coord, dx, dy, getNextPlayer(player)) *
+        config.defenseWeight;
+  }
+
+  const tactics = analyzeMoveTactics(board, coord, player);
+  const tactical =
+    (tactics.createsWin ? WIN_SCORE * 0.92 : 0) +
+    (tactics.blocksOpponentWin
+      ? WIN_SCORE * 0.8 * config.threatBlockWeight
+      : 0) +
+    tactics.createsReachCount * REACH_SCORE * 1.25 +
+    tactics.blocksOpponentReachCount *
+      REACH_SCORE *
+      0.9 *
+      config.threatBlockWeight +
+    tactics.createsSetupCount * SETUP_SCORE * config.attackWeight +
+    tactics.blocksOpponentSetupCount *
+      SETUP_SCORE *
+      0.8 *
+      config.threatBlockWeight;
+
+  return structure + tactical;
+}
+
 function wouldCreateWinByPlacement(
   board: BoardState,
-  coord: { x: number; y: number },
+  coord: Coordinate,
   player: PlayerId,
 ): boolean {
   if (!inBounds(coord.x, coord.y) || cellAt(board, coord.x, coord.y) !== null) {
     return false;
   }
 
-  for (const [dx, dy] of DIRECTIONS) {
-    let count = 1;
-
-    let cx = coord.x + dx;
-    let cy = coord.y + dy;
-    while (inBounds(cx, cy) && cellAt(board, cx, cy) === player) {
-      count++;
-      cx += dx;
-      cy += dy;
-    }
-
-    cx = coord.x - dx;
-    cy = coord.y - dy;
-    while (inBounds(cx, cy) && cellAt(board, cx, cy) === player) {
-      count++;
-      cx -= dx;
-      cy -= dy;
-    }
-
-    if (count >= 5) {
-      return true;
-    }
-  }
-
-  return false;
+  const nextBoard = placeStone(board, coord, player);
+  return checkWinAt(nextBoard, coord, player);
 }

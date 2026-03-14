@@ -1,11 +1,9 @@
 export {
   CPU_CONFIGS,
-  CPU_RISK_CONFIGS,
-  CPU_STYLE_CONFIGS,
+  CPU_PERSONA_CONFIGS,
   type CpuConfig,
   type CpuDifficulty,
-  type CpuRisk,
-  type CpuStyle,
+  type CpuPersona,
   type CpuTurnOrder,
 } from "./config";
 export { computeBestMove } from "./expectiminimax";

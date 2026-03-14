@@ -64,7 +64,7 @@ export function PlayingInfoPanel({
   }%`;
   const cpuInfoValue =
     snapshot.mode === "cpu" && snapshot.cpuInfo
-      ? `${t(`game.cpuDifficultyDisplay.${snapshot.cpuInfo.difficulty}`)} \u00b7 ${t(`game.cpuStyleDisplay.${snapshot.cpuInfo.style}`)} \u00b7 ${t(`game.cpuRiskDisplay.${snapshot.cpuInfo.risk}`)}`
+      ? `${t(`game.cpuDifficultyDisplay.${snapshot.cpuInfo.difficulty}`)} \u00b7 ${t(`game.cpuPersonaDisplay.${snapshot.cpuInfo.persona}`)}`
       : null;
 
   return (
