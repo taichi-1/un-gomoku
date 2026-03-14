@@ -103,6 +103,7 @@ export function TitlePage() {
     setCpuDifficulty(pickRandom(CPU_DIFFICULTY_OPTIONS));
     setCpuTurnOrder(pickRandom(CPU_TURN_ORDER_OPTIONS));
     setCpuPersona(pickRandom(CPU_PERSONA_OPTIONS));
+    setIsCpuSettingsOpen(true);
   };
 
   const handleJoin = (): void => {
@@ -212,7 +213,7 @@ export function TitlePage() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex flex-wrap items-end gap-2">
                   <CardTitle>{t("title.cpuTitle")}</CardTitle>
@@ -261,7 +262,7 @@ export function TitlePage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {isCpuSettingsOpen ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-(--text-muted)">
                       {t("title.cpuDifficultyLabel")}
@@ -290,30 +291,6 @@ export function TitlePage() {
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-(--text-muted)">
-                      {t("title.cpuTurnOrderLabel")}
-                    </span>
-                    <Select
-                      value={cpuTurnOrder}
-                      onValueChange={(v) => setCpuTurnOrder(v as CpuTurnOrder)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="random">
-                          {t("title.cpuTurnOrder.random")}
-                        </SelectItem>
-                        <SelectItem value="first">
-                          {t("title.cpuTurnOrder.first")}
-                        </SelectItem>
-                        <SelectItem value="second">
-                          {t("title.cpuTurnOrder.second")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2 flex flex-col gap-1">
-                    <span className="text-xs text-(--text-muted)">
                       {t("title.cpuPersonaLabel")}
                     </span>
                     <Select
@@ -332,6 +309,30 @@ export function TitlePage() {
                         </SelectItem>
                         <SelectItem value="gambler">
                           {t("title.cpuPersona.gambler")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-(--text-muted)">
+                      {t("title.cpuTurnOrderLabel")}
+                    </span>
+                    <Select
+                      value={cpuTurnOrder}
+                      onValueChange={(v) => setCpuTurnOrder(v as CpuTurnOrder)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="random">
+                          {t("title.cpuTurnOrder.random")}
+                        </SelectItem>
+                        <SelectItem value="first">
+                          {t("title.cpuTurnOrder.first")}
+                        </SelectItem>
+                        <SelectItem value="second">
+                          {t("title.cpuTurnOrder.second")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
