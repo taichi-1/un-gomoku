@@ -25,6 +25,7 @@
   --bg-0: #15110d;
   --bg-1: #1f1914;
   --bg-2: #2a221b;
+  --page-bg: #1f1914;
   --surface-1: rgba(43, 34, 24, 0.82);
   --surface-2: #33291f;
   --border-1: #6b573f;
@@ -61,6 +62,7 @@
   --bg-0: #f6efe3;
   --bg-1: #efe5d6;
   --bg-2: #e5d8c2;
+  --page-bg: #f6efe3;
   --surface-1: rgba(255, 250, 241, 0.9);
   --surface-2: #f8eee1;
   --border-1: #cbb498;
@@ -103,7 +105,7 @@ body,
 }
 
 html {
-  background-color: var(--bg-0);
+  background-color: var(--page-bg);
 }
 
 body {
@@ -111,7 +113,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   font-family: var(--font-ui);
-  background: var(--bg-0);
+  background: var(--page-bg);
   color: var(--text-normal);
 }
 
