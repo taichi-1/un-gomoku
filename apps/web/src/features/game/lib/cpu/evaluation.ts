@@ -19,8 +19,8 @@ const DIRECTIONS: readonly [number, number][] = [
 
 // ── Pattern score table ──
 // Index: [count][openEnds]  (count capped at 5, openEnds 0/1/2)
-// Note: PATTERN_SCORE and patternScore serve scoreCellPlacement move-ordering
-// exclusively, not board evaluation.
+// Note: PATTERN_SCORE and patternScore are used both by scoreCellPlacement
+// (move ordering) and evaluateBoard (MCTS rollout terminal evaluation).
 
 const PATTERN_SCORE: readonly (readonly number[])[] = [
   /*0*/ [0, 0, 0],
