@@ -153,18 +153,24 @@ function lineScore(
 export const WIN_SCORE = 1_000_000;
 
 /**
- * Lightweight board evaluation for rollout termination.
- * Returns CPU's longest sequence advantage over opponent (scaled by 100).
+ * Pattern-based board evaluation for MCTS rollout termination.
+ * Sums pattern scores for all runs of both players (CPU vs opponent).
+ * Positive = CPU advantage, negative = opponent advantage.
+ * Range: bounded by WIN_SCORE (1_000_000) so rollout normalization works.
  *
- * Note: This function is intended for MCTS rollout termination only,
- * not for expectiminimax leaf node evaluation.
+ * Note: This function is intended for MCTS rollout termination only.
  */
 export function evaluateBoard(board: BoardState, cpuPlayer: PlayerId): number {
   const opponent = getNextPlayer(cpuPlayer);
-  return (
-    longestSequence(board, cpuPlayer) * 100 -
-    longestSequence(board, opponent) * 100
-  );
+  let cpuTotal = 0;
+  let oppTotal = 0;
+  forEachRun(board, cpuPlayer, ({ count, openEnds }) => {
+    cpuTotal += patternScore(count, openEnds);
+  });
+  forEachRun(board, opponent, ({ count, openEnds }) => {
+    oppTotal += patternScore(count, openEnds);
+  });
+  return cpuTotal - oppTotal;
 }
 
 /**
