@@ -35,6 +35,7 @@ describe("resolveTurnIndicatorDisplay", () => {
       snapshot,
       showFinishedResult: false,
       displayPlayerId: "player1",
+      hasActiveFx: false,
       t: createTranslate(),
     });
 
@@ -53,6 +54,7 @@ describe("resolveTurnIndicatorDisplay", () => {
       snapshot,
       showFinishedResult: false,
       displayPlayerId: "player1",
+      hasActiveFx: false,
       t: createTranslate(),
     });
 
@@ -71,6 +73,7 @@ describe("resolveTurnIndicatorDisplay", () => {
       snapshot,
       showFinishedResult: false,
       displayPlayerId: "player1",
+      hasActiveFx: false,
       t: createTranslate(),
     });
 
@@ -92,6 +95,7 @@ describe("resolveTurnIndicatorDisplay", () => {
       snapshot,
       showFinishedResult: false,
       displayPlayerId: "player2",
+      hasActiveFx: false,
       t: createTranslate(),
     });
 
