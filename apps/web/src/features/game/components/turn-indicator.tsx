@@ -8,17 +8,20 @@ interface TurnIndicatorProps {
   snapshot: GameSessionSnapshot;
   showFinishedResult: boolean;
   displayPlayerId: PlayerId;
+  hasActiveFx: boolean;
 }
 
 export function resolveTurnIndicatorDisplay({
   snapshot,
   showFinishedResult,
   displayPlayerId,
+  hasActiveFx,
   t,
 }: {
   snapshot: GameSessionSnapshot;
   showFinishedResult: boolean;
   displayPlayerId: PlayerId;
+  hasActiveFx: boolean;
   t: (key: string, options?: Record<string, unknown>) => string;
 }): {
   label: string;
@@ -90,7 +93,7 @@ export function resolveTurnIndicatorDisplay({
   }
 
   if (snapshot.mode === "cpu") {
-    if (snapshot.status === "cpuThinking") {
+    if (snapshot.status === "cpuThinking" && !hasActiveFx) {
       return {
         label: t("game.cpuThinking"),
         indicatorStonePlayer: displayPlayerId,
@@ -120,12 +123,14 @@ export function TurnIndicator({
   snapshot,
   showFinishedResult,
   displayPlayerId,
+  hasActiveFx,
 }: TurnIndicatorProps) {
   const { t } = useTranslation();
   const { label, indicatorStonePlayer } = resolveTurnIndicatorDisplay({
     snapshot,
     showFinishedResult,
     displayPlayerId,
+    hasActiveFx,
     t,
   });
 

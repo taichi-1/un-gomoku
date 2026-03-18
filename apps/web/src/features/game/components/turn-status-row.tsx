@@ -7,12 +7,14 @@ interface TurnStatusRowProps {
   snapshot: GameSessionSnapshot;
   showFinishedResult: boolean;
   displayPlayerId: PlayerId;
+  hasActiveFx: boolean;
 }
 
 export function TurnStatusRow({
   snapshot,
   showFinishedResult,
   displayPlayerId,
+  hasActiveFx,
 }: TurnStatusRowProps) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -20,6 +22,7 @@ export function TurnStatusRow({
         snapshot={snapshot}
         showFinishedResult={showFinishedResult}
         displayPlayerId={displayPlayerId}
+        hasActiveFx={hasActiveFx}
       />
       {snapshot.mode === "online" ? (
         <SharePanel
