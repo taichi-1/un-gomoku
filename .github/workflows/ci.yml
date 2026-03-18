@@ -1,7 +1,8 @@
-name: CI
+name: ✅ CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 # Cancel in-progress runs when a new run is triggered for the same branch
