@@ -110,6 +110,7 @@ export function GamePage({ controller }: GamePageProps) {
               snapshot={snapshot}
               showFinishedResult={showFinishedResult}
               displayPlayerId={displayTurnPlayer}
+              hasActiveFx={activeFx !== null}
             />
             <GameBoard
               controller={effectiveController}
