@@ -20,11 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  CpuDifficulty,
-  CpuPersona,
-  CpuTurnOrder,
-} from "@/features/game/lib/cpu";
+import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/ai";
 import { preloadAllGameSounds } from "@/features/game/sound/game-sound-player";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
@@ -39,11 +35,6 @@ const CPU_TURN_ORDER_OPTIONS: readonly CpuTurnOrder[] = [
   "first",
   "second",
   "random",
-];
-const CPU_PERSONA_OPTIONS: readonly CpuPersona[] = [
-  "attacker",
-  "defender",
-  "gambler",
 ];
 
 function pickRandom<T>(values: readonly T[]): T {
@@ -62,7 +53,6 @@ export function TitlePage() {
   const navigate = useNavigate();
   const [joinRoomInput, setJoinRoomInput] = useState("");
   const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("medium");
-  const [cpuPersona, setCpuPersona] = useState<CpuPersona>("attacker");
   const [cpuTurnOrder, setCpuTurnOrder] = useState<CpuTurnOrder>("random");
   const [isCpuSettingsOpen, setIsCpuSettingsOpen] = useState(false);
 
@@ -102,7 +92,6 @@ export function TitlePage() {
   const randomizeCpuSettings = (): void => {
     setCpuDifficulty(pickRandom(CPU_DIFFICULTY_OPTIONS));
     setCpuTurnOrder(pickRandom(CPU_TURN_ORDER_OPTIONS));
-    setCpuPersona(pickRandom(CPU_PERSONA_OPTIONS));
     setIsCpuSettingsOpen(true);
   };
 
@@ -262,7 +251,7 @@ export function TitlePage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {isCpuSettingsOpen ? (
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-(--text-muted)">
                       {t("title.cpuDifficultyLabel")}
@@ -285,30 +274,6 @@ export function TitlePage() {
                         </SelectItem>
                         <SelectItem value="hard">
                           {t("title.cpuDifficulty.hard")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs text-(--text-muted)">
-                      {t("title.cpuPersonaLabel")}
-                    </span>
-                    <Select
-                      value={cpuPersona}
-                      onValueChange={(v) => setCpuPersona(v as CpuPersona)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="attacker">
-                          {t("title.cpuPersona.attacker")}
-                        </SelectItem>
-                        <SelectItem value="defender">
-                          {t("title.cpuPersona.defender")}
-                        </SelectItem>
-                        <SelectItem value="gambler">
-                          {t("title.cpuPersona.gambler")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -348,7 +313,6 @@ export function TitlePage() {
                     to: "/cpu",
                     search: {
                       difficulty: cpuDifficulty,
-                      persona: cpuPersona,
                       turnOrder: cpuTurnOrder,
                     },
                   });

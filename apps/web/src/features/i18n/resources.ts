@@ -39,12 +39,6 @@ export const resources = {
           medium: "ふつう",
           hard: "つよい",
         },
-        cpuPersonaLabel: "人格",
-        cpuPersona: {
-          attacker: "アタッカー",
-          defender: "ディフェンダー",
-          gambler: "ギャンブラー",
-        },
         cpuTurnOrderLabel: "手番",
         cpuTurnOrder: {
           first: "先行",
@@ -83,11 +77,6 @@ export const resources = {
           easy: "よわい",
           medium: "ふつう",
           hard: "つよい",
-        },
-        cpuPersonaDisplay: {
-          attacker: "アタッカー",
-          defender: "ディフェンダー",
-          gambler: "ギャンブラー",
         },
         rematch: "もう一局",
         luckFeedback: {
@@ -180,12 +169,6 @@ export const resources = {
           medium: "Medium",
           hard: "Hard",
         },
-        cpuPersonaLabel: "Persona",
-        cpuPersona: {
-          attacker: "Attacker",
-          defender: "Defender",
-          gambler: "Gambler",
-        },
         cpuTurnOrderLabel: "Turn order",
         cpuTurnOrder: {
           first: "First",
@@ -224,11 +207,6 @@ export const resources = {
           easy: "Easy",
           medium: "Medium",
           hard: "Hard",
-        },
-        cpuPersonaDisplay: {
-          attacker: "Attacker",
-          defender: "Defender",
-          gambler: "Gambler",
         },
         rematch: "Rematch",
         luckFeedback: {

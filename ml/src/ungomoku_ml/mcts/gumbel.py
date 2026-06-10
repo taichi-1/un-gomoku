@@ -81,7 +81,7 @@ def _simulate(
 
     if not cur.is_terminal:
         logits, value = yield cur
-        expand(cur, logits, value, cfg.max_children)
+        expand(cur, logits, value, cfg.max_children, cfg.force_tactics)
     _backup(path)
 
 
@@ -91,12 +91,19 @@ def _sigma(q: float, max_visits: int, cfg: SearchConfig) -> float:
 
 
 def _sh_sims_per_round(budget: int, arms: int) -> list[int]:
-    """Simulations per surviving arm for each sequential-halving round."""
+    """Simulations per surviving arm for each sequential-halving round.
+
+    Round 0 guarantees two sims per arm: the first only expands the child
+    (returning the net prior), so a second descent is the minimum needed for
+    real refinement — e.g. discovering the opponent's immediate win below a
+    non-blocking move. Without it, unrefined arms keep stale optimistic Qs.
+    """
     rounds = max(1, math.ceil(math.log2(arms))) if arms > 1 else 1
     sims = []
     remaining_arms = arms
-    for _ in range(rounds):
-        sims.append(max(1, budget // (rounds * remaining_arms)))
+    for round_index in range(rounds):
+        minimum = 2 if round_index == 0 else 1
+        sims.append(max(minimum, budget // (rounds * remaining_arms)))
         remaining_arms = max(1, remaining_arms // 2)
     return sims
 
@@ -125,16 +132,20 @@ def run_search(
 ) -> SearchGen:
     root = Node(board.copy(), to_move)
     logits, value = yield root
-    expand(root, logits, value, cfg.max_children)
+    expand(root, logits, value, cfg.max_children, cfg.force_tactics)
     assert root.cells is not None and root.logits is not None and root.child_n is not None
 
-    # Root arm sampling (indices into root.cells).
+    # Root arm sampling (indices into root.cells). Forced win/block cells are
+    # always arms so they enter the EV subset construction with refined Qs.
     base_scores = root.logits[root.cells].astype(np.float64)
     noisy_scores = (
         base_scores + rng.gumbel(size=len(base_scores)) if cfg.root_noise else base_scores
     )
     m = min(cfg.m_root_cells, len(root.cells))
     arms: list[int] = [int(a) for a in np.argsort(-noisy_scores, kind="stable")[:m]]
+    for index in root.forced:
+        if index not in arms:
+            arms.append(index)
 
     # Refine Q_pass first; it feeds every EV computation below.
     for _ in range(cfg.pass_simulations):

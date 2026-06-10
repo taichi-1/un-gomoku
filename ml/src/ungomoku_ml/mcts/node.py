@@ -20,6 +20,7 @@ from ungomoku_ml.rules import (
     MAX_CANDIDATES,
     other_player,
 )
+from ungomoku_ml.rules.tactics import winning_cells
 from ungomoku_ml.rules.win import check_win_at, is_board_full
 
 PASS = -1
@@ -35,6 +36,7 @@ class Node:
         "child_n",
         "children",
         "expanded",
+        "forced",
         "kstar",
         "logits",
         "n_total",
@@ -59,6 +61,7 @@ class Node:
         self.priors: np.ndarray | None = None
         self.child_n: np.ndarray | None = None
         self.children: list[Node | None] | None = None
+        self.forced: list[int] = []
         self.pass_child: Node | None = None
         self.pass_n = 0
         self.n_total = 0
@@ -69,12 +72,37 @@ class Node:
         return self.terminal_value is not None
 
 
-def expand(node: Node, logits: np.ndarray, value: float, max_children: int) -> None:
-    """Attaches net output to an unexpanded, non-terminal node."""
+def expand(
+    node: Node,
+    logits: np.ndarray,
+    value: float,
+    max_children: int,
+    force_tactics: bool = True,
+) -> None:
+    """Attaches net output to an unexpanded, non-terminal node.
+
+    With ``force_tactics``, immediate win cells (mover) and block cells
+    (opponent's win cells) are always included as children regardless of
+    policy priors, and recorded in ``node.forced`` so selection visits them
+    first. Without this, a rush-biased policy never proposes cells on the
+    opponent's line and defense is discovered extremely slowly.
+    """
     mask = legal_mask(node.board)
     legal = np.flatnonzero(mask)
     if len(legal) == 0:
         raise RuntimeError("expand called on a full board; should be terminal")
+
+    forced_ids: np.ndarray | None = None
+    if force_tactics:
+        forced_ids = np.unique(
+            np.concatenate(
+                [
+                    winning_cells(node.board, node.to_move),
+                    winning_cells(node.board, other_player(node.to_move)),
+                ]
+            )
+        )[:max_children]
+
     legal_logits = logits[legal]
     if len(legal) > max_children:
         top = np.argpartition(-legal_logits, max_children - 1)[:max_children]
@@ -83,6 +111,13 @@ def expand(node: Node, logits: np.ndarray, value: float, max_children: int) -> N
         cells = legal[top]
     else:
         cells = legal[np.argsort(-legal_logits, kind="stable")]
+
+    if forced_ids is not None and len(forced_ids) > 0:
+        missing = forced_ids[~np.isin(forced_ids, cells)]
+        if len(missing) > 0:
+            # Replace the lowest-prior tail to keep the child count bounded.
+            keep = max_children - len(missing) if len(cells) + len(missing) > max_children else None
+            cells = np.concatenate([cells[:keep], missing])
     selected = logits[cells]
     shifted = np.exp(selected - selected.max())
     node.priors = shifted / shifted.sum()
@@ -90,6 +125,9 @@ def expand(node: Node, logits: np.ndarray, value: float, max_children: int) -> N
     node.logits = logits
     node.children = [None] * len(cells)
     node.child_n = np.zeros(len(cells), dtype=np.int32)
+    if forced_ids is not None and len(forced_ids) > 0:
+        forced_positions = np.flatnonzero(np.isin(cells, forced_ids))
+        node.forced = [int(i) for i in forced_positions]
     node.v_net = float(value)
     node.value = float(value)
     node.kstar = min(DEFAULT_KSTAR, len(cells))
@@ -160,8 +198,15 @@ def recompute(node: Node) -> None:
 
 
 def select_cell(node: Node, c_puct: float) -> int:
-    """PUCT over cell children. FPU = current node value."""
+    """PUCT over cell children. FPU = current node value.
+
+    Unvisited forced (win/block) cells are visited first: their exact values
+    (terminal wins, refuted threats) anchor the EV computation immediately.
+    """
     assert node.cells is not None and node.priors is not None and node.child_n is not None
+    for index in node.forced:
+        if node.child_n[index] == 0:
+            return index
     q = np.full(len(node.cells), node.value, dtype=np.float64)
     for i in range(len(node.cells)):
         known = child_q(node, i)

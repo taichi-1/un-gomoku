@@ -6,6 +6,15 @@ the working directory to ml/). Checkpoints and metrics land in runs/<name>/.
 """
 
 import argparse
+import contextlib
+import sys
+
+
+def _force_utf8_stdio() -> None:
+    """Windows consoles default to cp1252; torch & friends print emoji."""
+    for stream in (sys.stdout, sys.stderr):
+        with contextlib.suppress(Exception):
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
 
 def _add_config_arg(parser: argparse.ArgumentParser) -> None:
@@ -13,6 +22,7 @@ def _add_config_arg(parser: argparse.ArgumentParser) -> None:
 
 
 def main() -> None:
+    _force_utf8_stdio()
     parser = argparse.ArgumentParser(prog="ungomoku-ml")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -36,6 +46,14 @@ def main() -> None:
     p_arena.add_argument("--sims", type=int, default=None, help="override search simulations")
     p_arena.add_argument("--device", default=None)
     p_arena.add_argument("--seed", type=int, default=20260611)
+
+    p_distill = sub.add_parser("distill", help="bootstrap a student net from a teacher's selfplay")
+    _add_config_arg(p_distill)
+    p_distill.add_argument("--teacher", required=True, help="teacher checkpoint")
+    p_distill.add_argument("--games", type=int, default=3000)
+    p_distill.add_argument("--steps", type=int, default=3000)
+    p_distill.add_argument("--out", required=True, help="output student checkpoint")
+    p_distill.add_argument("--device", default=None)
 
     p_export = sub.add_parser("export", help="checkpoint -> ONNX (with ORT parity check)")
     p_export.add_argument("--ckpt", required=True)
@@ -137,6 +155,20 @@ def main() -> None:
         finally:
             for pool in pools:
                 pool.close()
+
+    elif args.command == "distill":
+        from ungomoku_ml.config import load_config
+        from ungomoku_ml.train_loop import distill
+
+        out = distill(
+            load_config(args.config),
+            args.teacher,
+            args.games,
+            args.steps,
+            args.out,
+            device_override=args.device,
+        )
+        print(f"wrote {out}")
 
     elif args.command == "export":
         from ungomoku_ml.export_onnx import export_onnx

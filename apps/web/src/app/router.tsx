@@ -10,11 +10,7 @@ import { GamePage } from "@/features/game/components/game-page";
 import { useCpuGameSession } from "@/features/game/hooks/use-cpu-game-session";
 import { useLocalGameSession } from "@/features/game/hooks/use-local-game-session";
 import { useOnlineGameSession } from "@/features/game/hooks/use-online-game-session";
-import type {
-  CpuDifficulty,
-  CpuPersona,
-  CpuTurnOrder,
-} from "@/features/game/lib/cpu";
+import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/ai";
 import { TitlePage } from "@/features/title/components/title-page";
 
 function RootLayout() {
@@ -33,11 +29,10 @@ function LocalGameRouteComponent() {
 
 const VALID_DIFFICULTIES = new Set<string>(["easy", "medium", "hard"]);
 const VALID_TURN_ORDERS = new Set<string>(["first", "second", "random"]);
-const VALID_PERSONAS = new Set<string>(["attacker", "defender", "gambler"]);
 
 function CpuGameRouteComponent() {
-  const { difficulty, turnOrder, persona } = cpuRoute.useSearch();
-  const controller = useCpuGameSession(difficulty, turnOrder, persona);
+  const { difficulty, turnOrder } = cpuRoute.useSearch();
+  const controller = useCpuGameSession(difficulty, turnOrder);
   return <GamePage controller={controller} />;
 }
 
@@ -71,17 +66,12 @@ const cpuRoute = createRoute({
   ): {
     difficulty: CpuDifficulty;
     turnOrder: CpuTurnOrder;
-    persona: CpuPersona;
   } => {
     const d = String(search.difficulty ?? "medium");
     const t = String(search.turnOrder ?? "random");
-    const rawPersona = String(search.persona ?? "");
     return {
       difficulty: VALID_DIFFICULTIES.has(d) ? (d as CpuDifficulty) : "medium",
       turnOrder: VALID_TURN_ORDERS.has(t) ? (t as CpuTurnOrder) : "random",
-      persona: VALID_PERSONAS.has(rawPersona)
-        ? (rawPersona as CpuPersona)
-        : "attacker",
     };
   },
   component: CpuGameRouteComponent,

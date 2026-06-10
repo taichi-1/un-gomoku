@@ -1,17 +1,18 @@
-# Production training run (single consumer GPU).
-run_name: default
-seed: 42
-generations: 120
+# Run 4: 8x96 from the distilled checkpoint, double-quality search targets.
+# Combines the capacity bet (Run 2) with the target-quality bet (Run 3).
+run_name: large-deep
+seed: 9696
+generations: 200
 
 net:
-  blocks: 6
-  channels: 64
+  blocks: 8
+  channels: 96
 
 search:
   max_children: 32
-  m_root_cells: 16
-  simulations: 64
-  pass_simulations: 4
+  m_root_cells: 24
+  simulations: 128
+  pass_simulations: 6
   c_puct: 1.5
   c_visit: 50.0
   c_scale: 1.0
@@ -19,17 +20,17 @@ search:
 
 selfplay:
   parallel_games: 256
-  games_per_generation: 1000
+  games_per_generation: 700
   max_turns: 600
 
 replay:
-  capacity: 500000
-  min_fill: 20000
+  capacity: 400000
+  min_fill: 12000
 
 train:
   batch_size: 512
   steps_per_generation: 1000
-  lr: 0.00005
+  lr: 0.00015
   weight_decay: 0.0001
   value_loss_weight: 1.0
   lambda_mix: 0.5
