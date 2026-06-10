@@ -15,6 +15,7 @@
     "dev:worker": "bunx wrangler dev --local --port 8787",
     "deploy:worker": "bunx wrangler deploy",
     "typegen:worker": "bunx wrangler types",
+    "gen:parity": "bun run tools/parity-arena/src/generate-vectors.ts",
     "dev:web": "bun run --cwd apps/web dev",
     "build:web": "bun run --cwd apps/web build",
     "preview:web": "bun run --cwd apps/web preview"
@@ -30,6 +31,7 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tools/*"
   ]
 }

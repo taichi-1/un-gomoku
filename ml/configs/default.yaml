@@ -1,0 +1,42 @@
+# Production training run (single consumer GPU).
+run_name: default
+seed: 42
+generations: 60
+
+net:
+  blocks: 6
+  channels: 64
+
+search:
+  max_children: 32
+  m_root_cells: 16
+  simulations: 64
+  pass_simulations: 4
+  c_puct: 1.5
+  c_visit: 50.0
+  c_scale: 1.0
+  root_noise: true
+
+selfplay:
+  parallel_games: 256
+  games_per_generation: 2000
+  max_turns: 600
+
+replay:
+  capacity: 500000
+  min_fill: 20000
+
+train:
+  batch_size: 512
+  steps_per_generation: 1000
+  lr: 0.0002
+  weight_decay: 0.0001
+  value_loss_weight: 1.0
+  lambda_mix: 0.5
+
+arena:
+  every_generations: 1
+  games: 200
+  promote_threshold: 0.55
+  simulations: 32
+  parallel_games: 64

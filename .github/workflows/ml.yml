@@ -1,0 +1,70 @@
+name: 🧠 ML
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/**"
+      - "tools/parity-arena/**"
+      - "packages/**"
+      - ".github/workflows/ml.yml"
+  pull_request:
+    paths:
+      - "ml/**"
+      - "tools/parity-arena/**"
+      - "packages/**"
+      - ".github/workflows/ml.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: lint + test (ml)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "ml/uv.lock"
+
+      - name: Sync dependencies
+        run: uv sync --locked --directory ml
+
+      - name: Ruff lint
+        run: uv run --directory ml ruff check .
+
+      - name: Ruff format check
+        run: uv run --directory ml ruff format --check .
+
+      - name: Pytest
+        run: uv run --directory ml pytest -m "not slow"
+
+  parity-drift:
+    name: parity vectors up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Regenerate parity vectors
+        run: bun run gen:parity
+
+      - name: Verify fixtures are unchanged
+        run: git diff --exit-code ml/tests/fixtures/rule-vectors.json
