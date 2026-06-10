@@ -30,6 +30,8 @@ class SearchConfig(_StrictModel):
     c_scale: float = Field(default=1.0, gt=0)
     # Gumbel noise on root cell sampling (on for self-play, off for arena/inference).
     root_noise: bool = True
+    # Always include immediate win/block cells as children and root arms.
+    force_tactics: bool = True
 
 
 class SelfplayConfig(_StrictModel):

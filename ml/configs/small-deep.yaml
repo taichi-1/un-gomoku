@@ -1,7 +1,9 @@
-# Production training run (single consumer GPU).
-run_name: default
-seed: 42
-generations: 120
+# Run 3: proven 6x64 net, double-quality search targets (sims 64 -> 128).
+# Warm-start from Run-1 best (runs/default/best.pt). Tests whether target
+# quality, not capacity, limited the small net.
+run_name: small-deep
+seed: 4242
+generations: 200
 
 net:
   blocks: 6
@@ -9,9 +11,9 @@ net:
 
 search:
   max_children: 32
-  m_root_cells: 16
-  simulations: 64
-  pass_simulations: 4
+  m_root_cells: 24
+  simulations: 128
+  pass_simulations: 6
   c_puct: 1.5
   c_visit: 50.0
   c_scale: 1.0
@@ -19,17 +21,17 @@ search:
 
 selfplay:
   parallel_games: 256
-  games_per_generation: 1000
+  games_per_generation: 800
   max_turns: 600
 
 replay:
-  capacity: 500000
-  min_fill: 20000
+  capacity: 400000
+  min_fill: 15000
 
 train:
   batch_size: 512
   steps_per_generation: 1000
-  lr: 0.00005
+  lr: 0.0001
   weight_decay: 0.0001
   value_loss_weight: 1.0
   lambda_mix: 0.5

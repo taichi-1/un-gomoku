@@ -146,6 +146,61 @@ def load_net(ckpt_path: str | Path, device: torch.device) -> tuple[PolicyValueNe
     return net, ckpt
 
 
+def distill(
+    cfg: RunConfig,
+    teacher_ckpt: str | Path,
+    games: int,
+    steps: int,
+    out_path: str | Path,
+    device_override: str | None = None,
+) -> Path:
+    """Bootstraps a (typically larger) student net from a teacher's self-play.
+
+    The teacher plays `games` self-play games with the configured search; the
+    student trains on those records, then `train --resume <out>` continues
+    self-play with the student itself. Skips the slow scatter-play phase a
+    fresh net would otherwise re-walk.
+    """
+    device = pick_device(device_override)
+    torch.manual_seed(cfg.seed)
+    np_rng = np.random.default_rng(cfg.seed)
+
+    teacher, _ = load_net(teacher_ckpt, device)
+    student = PolicyValueNet(cfg.net).to(device)
+    buffer = ReplayBuffer(cfg.replay.capacity)
+    stats = run_selfplay(
+        NetEvaluator(teacher, device),
+        cfg.search,
+        games,
+        cfg.selfplay.parallel_games,
+        cfg.selfplay.max_turns,
+        buffer,
+        cfg.seed + 5_000_000,
+    )
+    print(
+        f"distill selfplay (teacher): {stats.games} games, {stats.positions} positions, "
+        f"{stats.seconds:.0f}s"
+    )
+    optimizer = torch.optim.AdamW(
+        student.parameters(), lr=cfg.train.lr, weight_decay=cfg.train.weight_decay
+    )
+    losses = train_steps(
+        student,
+        optimizer,
+        buffer,
+        steps,
+        cfg.train.batch_size,
+        cfg.train.lambda_mix,
+        cfg.train.value_loss_weight,
+        np_rng,
+        device,
+    )
+    print(f"distill train: policy {losses['policy_loss']:.4f}, value {losses['value_loss']:.4f}")
+    out_path = Path(out_path)
+    save_checkpoint(out_path, student, optimizer, 0, cfg)
+    return out_path
+
+
 def train(cfg: RunConfig, resume: str | None = None, device_override: str | None = None) -> Path:
     device = pick_device(device_override)
     torch.manual_seed(cfg.seed)
@@ -165,8 +220,13 @@ def train(cfg: RunConfig, resume: str | None = None, device_override: str | None
         net.load_state_dict(ckpt["net"])
         if ckpt.get("opt") is not None:
             optimizer.load_state_dict(ckpt["opt"])
+            # The optimizer state restores the OLD lr/weight decay; the config
+            # must win so lr schedules across resumes actually take effect.
+            for group in optimizer.param_groups:
+                group["lr"] = cfg.train.lr
+                group["weight_decay"] = cfg.train.weight_decay
         start_gen = int(ckpt.get("generation", 0))
-        print(f"resumed from {resume} at generation {start_gen}")
+        print(f"resumed from {resume} at generation {start_gen} (lr={cfg.train.lr})")
     net.eval()
 
     best_net = PolicyValueNet(cfg.net).to(device)

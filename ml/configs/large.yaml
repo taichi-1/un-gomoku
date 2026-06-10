@@ -1,11 +1,13 @@
-# Production training run (single consumer GPU).
-run_name: default
-seed: 42
-generations: 120
+# Run 2: larger net (8 blocks x 96 ch, ~1.5M params / ~5.8 MB fp32 — still
+# comfortably within the browser budget). At low simulation counts a bigger
+# net tends to beat a smaller one searching slightly deeper.
+run_name: large
+seed: 1234
+generations: 200
 
 net:
-  blocks: 6
-  channels: 64
+  blocks: 8
+  channels: 96
 
 search:
   max_children: 32
@@ -29,7 +31,7 @@ replay:
 train:
   batch_size: 512
   steps_per_generation: 1000
-  lr: 0.00005
+  lr: 0.0002
   weight_decay: 0.0001
   value_loss_weight: 1.0
   lambda_mix: 0.5

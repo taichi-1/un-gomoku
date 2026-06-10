@@ -6,17 +6,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import { gameSessionQueryKey } from "@/app/query-keys";
 import {
+  CPU_TURN_TIMINGS,
+  type CpuDifficulty,
+  type CpuTurnOrder,
+  EngineCancelledError,
+  getEngineClient,
+} from "@/features/game/lib/ai";
+import {
   applyCandidateSelection,
   hasDuplicateCandidates,
 } from "@/features/game/lib/candidate";
-import {
-  CPU_CONFIGS,
-  CPU_PERSONA_CONFIGS,
-  type CpuDifficulty,
-  type CpuPersona,
-  type CpuTurnOrder,
-  computeBestMove,
-} from "@/features/game/lib/cpu";
 import type {
   GameController,
   GameSessionSnapshot,
@@ -25,22 +24,13 @@ import type {
 /** Estimated duration of the player's turn resolution animation in ms. */
 const ANIMATION_ESTIMATED_MS = 1600;
 
-function createCpuQueryKey(
-  difficulty: CpuDifficulty,
-  turnOrder: CpuTurnOrder,
-  persona: CpuPersona,
-) {
-  return [
-    ...gameSessionQueryKey("cpu", difficulty),
-    turnOrder,
-    persona,
-  ] as const;
+function createCpuQueryKey(difficulty: CpuDifficulty, turnOrder: CpuTurnOrder) {
+  return [...gameSessionQueryKey("cpu", difficulty), turnOrder] as const;
 }
 
 function createInitialCpuSnapshot(
   turnOrder: CpuTurnOrder,
   difficulty: CpuDifficulty,
-  persona: CpuPersona,
 ): GameSessionSnapshot {
   const initialState = createInitialGameState();
   const blackPlayer: PlayerId = "player1";
@@ -68,36 +58,34 @@ function createInitialCpuSnapshot(
     opponentCandidates: [],
     status: "connected",
     statusMessage: null,
-    cpuInfo: { difficulty, persona },
+    cpuInfo: { difficulty },
   };
 }
 
 export function useCpuGameSession(
   difficulty: CpuDifficulty,
   turnOrder: CpuTurnOrder,
-  persona: CpuPersona,
 ): GameController {
   const queryClient = useQueryClient();
   const cpuTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Bumped on rematch/unmount so in-flight async engine results are discarded.
+  const cpuEpochRef = useRef(0);
 
-  const queryKey = createCpuQueryKey(difficulty, turnOrder, persona);
+  const queryKey = createCpuQueryKey(difficulty, turnOrder);
 
   const { data: snapshot } = useQuery({
     queryKey,
-    queryFn: async () =>
-      createInitialCpuSnapshot(turnOrder, difficulty, persona),
-    initialData: () => createInitialCpuSnapshot(turnOrder, difficulty, persona),
+    queryFn: async () => createInitialCpuSnapshot(turnOrder, difficulty),
+    initialData: () => createInitialCpuSnapshot(turnOrder, difficulty),
   });
 
   const setSnapshot = useCallback(
     (updater: (current: GameSessionSnapshot) => GameSessionSnapshot): void => {
       queryClient.setQueryData<GameSessionSnapshot>(queryKey, (current) =>
-        updater(
-          current ?? createInitialCpuSnapshot(turnOrder, difficulty, persona),
-        ),
+        updater(current ?? createInitialCpuSnapshot(turnOrder, difficulty)),
       );
     },
-    [queryClient, queryKey, turnOrder, difficulty, persona],
+    [queryClient, queryKey, turnOrder, difficulty],
   );
 
   const clearCpuTimers = useCallback(() => {
@@ -107,32 +95,27 @@ export function useCpuGameSession(
     cpuTimersRef.current = [];
   }, []);
 
-  // ── Run CPU turn with staged candidate selection ──
+  // Pre-load ORT + model while the player thinks about their first move.
+  useEffect(() => {
+    getEngineClient()
+      .warmUp()
+      .catch(() => {
+        // Errors surface (with emergency fallback) when a move is requested.
+      });
+  }, []);
 
-  const runCpuTurn = useCallback(
-    (cpuTurnStartTime: number) => {
-      // Snapshot read outside setSnapshot to compute candidates synchronously
-      const current = queryClient.getQueryData<GameSessionSnapshot>(queryKey);
-      if (!current) return;
-      const { gameState, myPlayerId } = current;
-      if (gameState.phase !== "playing") return;
-      if (gameState.currentPlayer === myPlayerId) return;
+  // ── Staged candidate reveal + turn resolution ──
 
-      const cpuPlayer = gameState.currentPlayer;
-      const config = {
-        ...CPU_CONFIGS[difficulty],
-        ...CPU_PERSONA_CONFIGS[persona],
-      };
-      const { candidates } = computeBestMove(
-        gameState.board,
-        cpuPlayer,
-        config,
-      );
-      if (candidates.length === 0) return;
-
+  const scheduleCpuResolution = useCallback(
+    (
+      cpuPlayer: PlayerId,
+      candidates: Coordinate[],
+      cpuTurnStartTime: number,
+    ) => {
+      const pacing = CPU_TURN_TIMINGS[difficulty];
       const elapsed = Date.now() - cpuTurnStartTime;
       const animationWait = Math.max(0, ANIMATION_ESTIMATED_MS - elapsed);
-      const totalDelay = animationWait + config.thinkingDelayMs;
+      const totalDelay = animationWait + pacing.thinkingDelayMs;
 
       // After animation + 余韻 delay, start showing candidates one-by-one
       const startTimer = setTimeout(() => {
@@ -142,14 +125,14 @@ export function useCpuGameSession(
               ...s,
               opponentCandidates: candidates.slice(0, i + 1),
             }));
-          }, i * config.candidateSelectionIntervalMs);
+          }, i * pacing.candidateSelectionIntervalMs);
           cpuTimersRef.current.push(selectionTimer);
         }
 
         // After all candidates shown + postSelectionPauseMs, resolve the turn
         const resolveDelay =
-          (candidates.length - 1) * config.candidateSelectionIntervalMs +
-          config.postSelectionPauseMs;
+          (candidates.length - 1) * pacing.candidateSelectionIntervalMs +
+          pacing.postSelectionPauseMs;
 
         const resolveTimer = setTimeout(() => {
           setSnapshot((s) => {
@@ -181,7 +164,35 @@ export function useCpuGameSession(
 
       cpuTimersRef.current.push(startTimer);
     },
-    [queryClient, queryKey, difficulty, persona, setSnapshot],
+    [setSnapshot, difficulty],
+  );
+
+  // ── Run CPU turn (async engine in a Web Worker) ──
+
+  const runCpuTurn = useCallback(
+    (cpuTurnStartTime: number) => {
+      const current = queryClient.getQueryData<GameSessionSnapshot>(queryKey);
+      if (!current) return;
+      const { gameState, myPlayerId } = current;
+      if (gameState.phase !== "playing") return;
+      if (gameState.currentPlayer === myPlayerId) return;
+
+      const cpuPlayer = gameState.currentPlayer;
+      const epoch = cpuEpochRef.current;
+      getEngineClient()
+        .computeMove(gameState.board, cpuPlayer, difficulty)
+        .then(({ candidates }) => {
+          if (cpuEpochRef.current !== epoch) return;
+          if (candidates.length === 0) return;
+          scheduleCpuResolution(cpuPlayer, candidates, cpuTurnStartTime);
+        })
+        .catch((error) => {
+          if (!(error instanceof EngineCancelledError)) {
+            console.error("[cpu] engine move failed", error);
+          }
+        });
+    },
+    [queryClient, queryKey, difficulty, scheduleCpuResolution],
   );
 
   // ── Auto-trigger CPU turn when it's CPU's turn ──
@@ -211,6 +222,19 @@ export function useCpuGameSession(
 
     runCpuTurn(cpuTurnStartTimeRef.current);
   }, [isCpuTurn, setSnapshot, runCpuTurn]);
+
+  // Cancel timers and discard in-flight engine results on unmount.
+  useEffect(() => {
+    return () => {
+      clearCpuTimers();
+      cpuEpochRef.current += 1;
+      getEngineClient().cancelAll();
+      // Allow the trigger effect to reschedule after a StrictMode simulated
+      // unmount: the epoch bump above discards the in-flight move, so without
+      // this reset a CPU-first game would soft-lock on "cpuThinking" in dev.
+      cpuScheduledRef.current = false;
+    };
+  }, [clearCpuTimers]);
 
   // ── Human interaction ──
 
@@ -304,11 +328,13 @@ export function useCpuGameSession(
 
   const rematch = useCallback(() => {
     clearCpuTimers();
+    cpuEpochRef.current += 1;
+    getEngineClient().cancelAll();
     queryClient.setQueryData(
       queryKey,
-      createInitialCpuSnapshot(turnOrder, difficulty, persona),
+      createInitialCpuSnapshot(turnOrder, difficulty),
     );
-  }, [clearCpuTimers, queryClient, queryKey, turnOrder, difficulty, persona]);
+  }, [clearCpuTimers, queryClient, queryKey, turnOrder, difficulty]);
 
   return {
     snapshot,

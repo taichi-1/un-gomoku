@@ -1,5 +1,5 @@
 import type { Coordinate, GameStateDTO, PlayerId } from "@pkg/shared/schemas";
-import type { CpuDifficulty, CpuPersona } from "@/features/game/lib/cpu";
+import type { CpuDifficulty } from "@/features/game/lib/ai";
 
 export type GameMode = "local" | "online" | "cpu";
 
@@ -26,7 +26,7 @@ export interface GameSessionSnapshot {
   opponentCandidates: Coordinate[];
   status: GameSessionStatus;
   statusMessage: string | null;
-  cpuInfo?: { difficulty: CpuDifficulty; persona: CpuPersona };
+  cpuInfo?: { difficulty: CpuDifficulty };
 }
 
 export interface GameController {

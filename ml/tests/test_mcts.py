@@ -115,6 +115,47 @@ def test_policy_target_zero_on_illegal_cells() -> None:
     assert result.policy_target[cell_index(8, 7)] == 0.0
 
 
+class BlindOracle:
+    """Proximity-only policy, constant zero value: sees no tactics at all."""
+
+    def __call__(self, nodes):
+        logits = np.empty((len(nodes), 225), dtype=np.float32)
+        values = np.zeros(len(nodes), dtype=np.float32)
+        for row, node in enumerate(nodes):
+            board = node.board
+            cell_logits = np.full(225, -2.0, dtype=np.float32)
+            occupied = np.argwhere(board != EMPTY)
+            for cell in np.flatnonzero(legal_mask(board)):
+                c = int(cell)
+                x, y = cell_xy(c)
+                if any(abs(int(sy) - y) <= 1 and abs(int(sx) - x) <= 1 for sy, sx in occupied):
+                    cell_logits[c] = 1.0
+            logits[row] = cell_logits
+        return logits, values
+
+
+def test_forced_tactics_block_with_tactics_blind_net() -> None:
+    """Even a net that proposes nothing tactical must block via forced cells."""
+    board = new_board()
+    for x in (3, 4, 5, 6):
+        board[7, x] = PLAYER2
+    board[7, 2] = PLAYER1  # opponent's only winning cell is (7,7)
+    gen = run_search(board, PLAYER1, CFG, np.random.default_rng(5))
+    result = drive_single(gen, BlindOracle())
+    assert result.cells[0] == cell_index(7, 7)
+
+
+def test_forced_tactics_win_with_tactics_blind_net() -> None:
+    board = new_board()
+    for x in (3, 4, 5, 6):
+        board[7, x] = PLAYER1
+    board[7, 2] = PLAYER2
+    gen = run_search(board, PLAYER1, CFG, np.random.default_rng(5))
+    result = drive_single(gen, BlindOracle())
+    assert result.cells[0] == cell_index(7, 7)
+    assert result.root_value > 0.4
+
+
 def test_search_is_deterministic_given_seed() -> None:
     board = new_board()
     board[7, 7] = PLAYER1
