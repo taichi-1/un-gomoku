@@ -41,3 +41,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Python (ml/)
+ml/.venv/
+ml/runs/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.pt

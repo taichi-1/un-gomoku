@@ -1,0 +1,15 @@
+{
+  "name": "@tools/parity-arena",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@pkg/core": "workspace:*",
+    "@pkg/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
