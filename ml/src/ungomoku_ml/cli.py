@@ -85,10 +85,10 @@ def main() -> None:
         else:
             net = PolicyValueNet(cfg.net).to(device)
             net.eval()
-        buffer = ReplayBuffer(cfg.replay.capacity)
+        buffer = ReplayBuffer(cfg.replay.capacity, cfg.net.in_planes)
         games = args.games if args.games is not None else cfg.selfplay.games_per_generation
         stats = run_selfplay(
-            NetEvaluator(net, device),
+            NetEvaluator(net, device, cfg.net.in_planes),
             cfg.search,
             games,
             cfg.selfplay.parallel_games,
@@ -136,8 +136,9 @@ def main() -> None:
                 )
                 pools.append(pool)
                 return ts_opponent_agent(pool)
-            net, _ = load_net(spec, device)
-            return net_agent(label, NetEvaluator(net, device), search)
+            net, ckpt = load_net(spec, device)
+            in_planes = int(ckpt["net_config"].get("in_planes", 3))
+            return net_agent(label, NetEvaluator(net, device, in_planes), search)
 
         try:
             agent_a = make_agent(args.p1, "p1")

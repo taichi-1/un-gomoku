@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { checkWinAtFlat, runSearch, type SearchOptions } from "./search";
+import { runSearch, type SearchOptions } from "./search";
+import { checkWinAtFlat } from "./tactics";
 import { CELLS, cellIndex, type Evaluate, otherStone } from "./types";
 
 function mulberry32(seed: number): () => number {
@@ -24,6 +25,7 @@ const OPTIONS: SearchOptions = {
   qNoise: 0,
   topCellDropout: 0,
   forceTactics: true,
+  solverDepth: 3,
 };
 
 function winsAt(board: Int8Array, cell: number, stone: number): boolean {
@@ -33,48 +35,43 @@ function winsAt(board: Int8Array, cell: number, stone: number): boolean {
   return won;
 }
 
+function nearStones(board: Int8Array, cell: number): boolean {
+  const x = cell % 15;
+  const y = Math.floor(cell / 15);
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const cx = x + dx;
+      const cy = y + dy;
+      if (
+        cx >= 0 &&
+        cx < 15 &&
+        cy >= 0 &&
+        cy < 15 &&
+        board[cy * 15 + cx] !== 0
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * One-ply tactical oracle (mirror of ml/tests/test_mcts.py): sees immediate
- * wins/threats only, mimicking a weakly trained net. The planes input is
- * decoded back to a board (plane0 = mover stones, plane1 = opponent stones).
+ * wins/threats only, mimicking a weakly trained net.
  */
-const tacticalOracle: Evaluate = async (planesBatch) => {
+const tacticalOracle: Evaluate = async (requests) => {
   const logits: Float32Array[] = [];
   const values: number[] = [];
-  for (const planes of planesBatch) {
-    // Reconstruct an absolute board with mover=1, opponent=2.
-    const board = new Int8Array(CELLS);
-    for (let i = 0; i < CELLS; i++) {
-      if (planes[i] === 1) board[i] = 1;
-      else if (planes[225 + i] === 1) board[i] = 2;
-    }
-    const mover = 1;
-    const opponent = otherStone(mover);
+  for (const { board, toMove } of requests) {
+    const opponent = otherStone(toMove);
     const cellLogits = new Float32Array(CELLS).fill(-2);
     let moverCanWin = false;
     let opponentCanWin = false;
     for (let i = 0; i < CELLS; i++) {
       if (board[i] !== 0) continue;
-      const x = i % 15;
-      const y = Math.floor(i / 15);
-      let near = false;
-      for (let dy = -1; dy <= 1 && !near; dy++) {
-        for (let dx = -1; dx <= 1 && !near; dx++) {
-          const cx = x + dx;
-          const cy = y + dy;
-          if (
-            cx >= 0 &&
-            cx < 15 &&
-            cy >= 0 &&
-            cy < 15 &&
-            board[cy * 15 + cx] !== 0
-          ) {
-            near = true;
-          }
-        }
-      }
-      if (near) cellLogits[i] = 1;
-      if (winsAt(board, i, mover)) {
+      if (nearStones(board, i)) cellLogits[i] = 1;
+      if (winsAt(board, i, toMove)) {
         cellLogits[i] = 3;
         moverCanWin = true;
       } else if (winsAt(board, i, opponent)) {
@@ -87,6 +84,18 @@ const tacticalOracle: Evaluate = async (planesBatch) => {
   }
   return { logits, values };
 };
+
+/** Proximity-only policy, constant zero value: no tactical knowledge. */
+const blindOracle: Evaluate = async (requests) => ({
+  logits: requests.map(({ board }) => {
+    const cellLogits = new Float32Array(CELLS).fill(-2);
+    for (let i = 0; i < CELLS; i++) {
+      if (board[i] === 0 && nearStones(board, i)) cellLogits[i] = 1;
+    }
+    return cellLogits;
+  }),
+  values: requests.map(() => 0),
+});
 
 function emptyBoard(): Int8Array {
   return new Int8Array(CELLS);
@@ -141,6 +150,14 @@ describe("runSearch", () => {
     expect(move.rootValue).toBeLessThan(0);
   });
 
+  test("blocks via forced cells even with a tactics-blind net", async () => {
+    const board = emptyBoard();
+    for (const x of [3, 4, 5, 6]) board[cellIndex(x, 7)] = 2;
+    board[cellIndex(2, 7)] = 1;
+    const move = await runSearch(board, 1, OPTIONS, blindOracle, mulberry32(5));
+    expect(move.cells[0]).toBe(cellIndex(7, 7));
+  });
+
   test("expired deadline still returns a legal move", async () => {
     const board = emptyBoard();
     board[cellIndex(7, 7)] = 2;
@@ -156,42 +173,6 @@ describe("runSearch", () => {
     for (const cell of move.cells) {
       expect(board[cell]).toBe(0);
     }
-  });
-
-  test("blocks via forced cells even with a tactics-blind net", async () => {
-    // Proximity-only policy, constant zero value: no tactical knowledge.
-    const blindOracle: Evaluate = async (planesBatch) => ({
-      logits: planesBatch.map((planes) => {
-        const cellLogits = new Float32Array(CELLS).fill(-2);
-        for (let i = 0; i < CELLS; i++) {
-          if (planes[i] === 1 || planes[225 + i] === 1) continue;
-          const x = i % 15;
-          const y = Math.floor(i / 15);
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const j = (y + dy) * 15 + (x + dx);
-              if (
-                x + dx >= 0 &&
-                x + dx < 15 &&
-                y + dy >= 0 &&
-                y + dy < 15 &&
-                (planes[j] === 1 || planes[225 + j] === 1)
-              ) {
-                cellLogits[i] = 1;
-              }
-            }
-          }
-        }
-        return cellLogits;
-      }),
-      values: planesBatch.map(() => 0),
-    });
-
-    const board = emptyBoard();
-    for (const x of [3, 4, 5, 6]) board[cellIndex(x, 7)] = 2;
-    board[cellIndex(2, 7)] = 1;
-    const move = await runSearch(board, 1, OPTIONS, blindOracle, mulberry32(5));
-    expect(move.cells[0]).toBe(cellIndex(7, 7));
   });
 
   test("is deterministic for a fixed seed", async () => {

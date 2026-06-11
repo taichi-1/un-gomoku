@@ -73,9 +73,26 @@ def test_dihedral_transforms_are_distinct_bijections() -> None:
 def test_encoding_matches_committed_fixture() -> None:
     data = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     names = {"player1": PLAYER1, "player2": PLAYER2}
+    assert any(case["inPlanes"] == 5 for case in data["cases"])
     for case in data["cases"]:
         board = board_from_string(case["board"])
-        planes = encode_board(board, names[case["toMove"]])
+        planes = encode_board(board, names[case["toMove"]], case["inPlanes"])
         np.testing.assert_array_equal(
             planes.reshape(-1), np.array(case["planes"], dtype=np.float32), err_msg=case["name"]
         )
+
+
+def test_v2_planes_mark_tactical_cells() -> None:
+    board = new_board()
+    for x in (3, 4, 5, 6):
+        board[7, x] = PLAYER1
+    planes = encode_board(board, PLAYER1, 5)
+    assert planes.shape == (5, 15, 15)
+    # Mover's win cells: both open ends of the four.
+    assert planes[3, 7, 2] == 1.0 and planes[3, 7, 7] == 1.0
+    assert planes[3].sum() == 2.0
+    assert planes[4].sum() == 0.0
+    # Opponent's perspective: same cells appear as block cells.
+    flipped = encode_board(board, PLAYER2, 5)
+    assert flipped[4, 7, 2] == 1.0 and flipped[4, 7, 7] == 1.0
+    assert flipped[3].sum() == 0.0

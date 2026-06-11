@@ -63,7 +63,7 @@ def run_selfplay(
     turns = 0
     for game in finished:
         assert game.history is not None
-        positions += buffer.add_game(game.history, game.winner)
+        positions += buffer.add_game(game.history, game.winner, game.final_board)
         turns += game.turns
         if game.winner == PLAYER1:
             p1 += 1
@@ -92,28 +92,38 @@ def train_steps(
     value_loss_weight: float,
     rng: np.random.Generator,
     device: torch.device,
+    ownership_weight: float = 0.0,
 ) -> dict[str, float]:
     net.train()
-    policy_total = value_total = 0.0
+    use_ownership = net.ownership_head is not None and ownership_weight > 0.0
+    policy_total = value_total = ownership_total = 0.0
     for _ in tqdm(range(steps), desc="train", unit="step", leave=False):
-        planes, target_pi, target_v = buffer.sample(batch_size, rng, lambda_mix)
+        planes, target_pi, target_v, target_own = buffer.sample(batch_size, rng, lambda_mix)
         x = torch.from_numpy(planes).to(device)
         pi = torch.from_numpy(target_pi).to(device)
         v = torch.from_numpy(target_v).to(device)
-        logits, value = net(x)
+        logits, value, ownership = net.forward_with_aux(x)
         policy_loss = -(pi * F.log_softmax(logits, dim=1)).sum(dim=1).mean()
         value_loss = F.mse_loss(value, v)
         loss = policy_loss + value_loss_weight * value_loss
+        if use_ownership and ownership is not None and target_own is not None:
+            own_target = torch.from_numpy(target_own).to(device)
+            ownership_loss = F.cross_entropy(ownership, own_target)
+            loss = loss + ownership_weight * ownership_loss
+            ownership_total += float(ownership_loss.detach())
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
         policy_total += float(policy_loss.detach())
         value_total += float(value_loss.detach())
     net.eval()
-    return {
+    out = {
         "policy_loss": policy_total / max(1, steps),
         "value_loss": value_total / max(1, steps),
     }
+    if use_ownership:
+        out["ownership_loss"] = ownership_total / max(1, steps)
+    return out
 
 
 def save_checkpoint(
@@ -165,11 +175,16 @@ def distill(
     torch.manual_seed(cfg.seed)
     np_rng = np.random.default_rng(cfg.seed)
 
-    teacher, _ = load_net(teacher_ckpt, device)
+    teacher, teacher_ckpt_data = load_net(teacher_ckpt, device)
+    teacher_planes = int(teacher_ckpt_data["net_config"].get("in_planes", 3))
     student = PolicyValueNet(cfg.net).to(device)
-    buffer = ReplayBuffer(cfg.replay.capacity)
+    # Records store raw boards; the student's sampler re-encodes with its own
+    # plane count, so teacher and student feature sets may differ freely.
+    buffer = ReplayBuffer(
+        cfg.replay.capacity, cfg.net.in_planes, store_ownership=cfg.net.aux_ownership
+    )
     stats = run_selfplay(
-        NetEvaluator(teacher, device),
+        NetEvaluator(teacher, device, teacher_planes),
         cfg.search,
         games,
         cfg.selfplay.parallel_games,
@@ -194,6 +209,7 @@ def distill(
         cfg.train.value_loss_weight,
         np_rng,
         device,
+        ownership_weight=cfg.train.ownership_weight,
     )
     print(f"distill train: policy {losses['policy_loss']:.4f}, value {losses['value_loss']:.4f}")
     out_path = Path(out_path)
@@ -239,9 +255,11 @@ def train(cfg: RunConfig, resume: str | None = None, device_override: str | None
         save_checkpoint(best_path, net, None, start_gen, cfg)
     best_net.eval()
 
-    buffer = ReplayBuffer(cfg.replay.capacity)
-    evaluator = NetEvaluator(net, device)
-    best_evaluator = NetEvaluator(best_net, device)
+    buffer = ReplayBuffer(
+        cfg.replay.capacity, cfg.net.in_planes, store_ownership=cfg.net.aux_ownership
+    )
+    evaluator = NetEvaluator(net, device, cfg.net.in_planes)
+    best_evaluator = NetEvaluator(best_net, device, cfg.net.in_planes)
 
     print(f"training on {device}; run dir: {run_dir.resolve()}")
     for gen in range(start_gen, cfg.generations):
@@ -274,6 +292,7 @@ def train(cfg: RunConfig, resume: str | None = None, device_override: str | None
                 cfg.train.value_loss_weight,
                 np_rng,
                 device,
+                ownership_weight=cfg.train.ownership_weight,
             )
             print(
                 f"[gen {gen}] train: policy {losses['policy_loss']:.4f}, "

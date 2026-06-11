@@ -132,7 +132,14 @@ def run_search(
 ) -> SearchGen:
     root = Node(board.copy(), to_move)
     logits, value = yield root
-    expand(root, logits, value, cfg.max_children, cfg.force_tactics)
+    expand(
+        root,
+        logits,
+        value,
+        cfg.max_children,
+        cfg.force_tactics,
+        root_solver_depth=cfg.solver_depth if cfg.force_tactics else 0,
+    )
     assert root.cells is not None and root.logits is not None and root.child_n is not None
 
     # Root arm sampling (indices into root.cells). Forced win/block cells are

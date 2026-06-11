@@ -38,7 +38,7 @@ train:
 
 arena:
   every_generations: 1
-  games: 200
+  games: 300
   promote_threshold: 0.55
   simulations: 32
   parallel_games: 64

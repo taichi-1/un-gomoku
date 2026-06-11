@@ -73,9 +73,42 @@ def test_tiny_net_selfplay_fills_replay_buffer() -> None:
         buffer.add_game(game.history, game.winner)
     assert buffer.size > 0
 
-    planes, policy, value = buffer.sample(16, np.random.default_rng(1), lambda_mix=0.5)
+    planes, policy, value, ownership = buffer.sample(16, np.random.default_rng(1), lambda_mix=0.5)
     assert planes.shape == (16, 3, 15, 15)
     assert policy.shape == (16, 225)
     assert value.shape == (16,)
+    assert ownership is None  # store_ownership not enabled
     assert np.all(value <= 1.0) and np.all(value >= -1.0)
     np.testing.assert_allclose(policy.sum(axis=1), 1.0, atol=1e-3)
+
+
+def test_ownership_targets_are_mover_relative_and_augmented() -> None:
+    from ungomoku_ml.driver import PositionRecord
+    from ungomoku_ml.rules import BOARD_SIZE, new_board
+
+    buffer = ReplayBuffer(capacity=64, in_planes=5, store_ownership=True)
+    board = new_board()
+    final = new_board()
+    final[7, 3] = 1
+    final[0, 14] = 2
+    record_p1 = PositionRecord(
+        board=board.copy(), to_move=1, policy=np.full(225, 1 / 225, np.float32), root_value=0.0
+    )
+    record_p2 = PositionRecord(
+        board=board.copy(), to_move=2, policy=np.full(225, 1 / 225, np.float32), root_value=0.0
+    )
+    buffer.add_game([record_p1, record_p2], winner=1, final_board=final)
+
+    rng = np.random.default_rng(0)
+    found = {1: False, 2: False}
+    for _ in range(20):
+        _planes, _policy, _value, ownership = buffer.sample(8, rng, lambda_mix=0.5)
+        assert ownership is not None and ownership.shape == (8, BOARD_SIZE, BOARD_SIZE)
+        for row in range(8):
+            counts = np.bincount(ownership[row].reshape(-1), minlength=3)
+            # Exactly two stones on the final board: one mover-class, one
+            # opponent-class regardless of perspective or symmetry.
+            assert counts[1] == 1 and counts[2] == 1
+            found[1] = True
+            found[2] = True
+    assert all(found.values())

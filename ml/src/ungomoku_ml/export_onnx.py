@@ -10,12 +10,13 @@ from ungomoku_ml.train_loop import load_net
 
 def export_onnx(ckpt_path: str | Path, out_path: str | Path, check: bool = True) -> Path:
     device = torch.device("cpu")
-    net, _ckpt = load_net(ckpt_path, device)
+    net, ckpt = load_net(ckpt_path, device)
     net.eval()
+    in_planes = int(ckpt["net_config"].get("in_planes", 3))
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    example = torch.zeros(2, 3, 15, 15)
+    example = torch.zeros(2, in_planes, 15, 15)
     program = torch.onnx.export(
         net,
         (example,),
@@ -29,18 +30,18 @@ def export_onnx(ckpt_path: str | Path, out_path: str | Path, check: bool = True)
     program.save(str(out_path))
 
     if check:
-        _verify(net, out_path)
+        _verify(net, out_path, in_planes)
     return out_path
 
 
-def _verify(net: torch.nn.Module, onnx_path: Path, tolerance: float = 1e-4) -> None:
+def _verify(net: torch.nn.Module, onnx_path: Path, in_planes: int, tolerance: float = 1e-4) -> None:
     import onnxruntime as ort
 
     session = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
     input_name = session.get_inputs()[0].name
     rng = np.random.default_rng(0)
     for batch in (1, 7):
-        planes = np.zeros((batch, 3, 15, 15), dtype=np.float32)
+        planes = np.zeros((batch, in_planes, 15, 15), dtype=np.float32)
         stones = rng.random((batch, 15, 15)) < 0.3
         colors = rng.random((batch, 15, 15)) < 0.5
         planes[:, 0] = stones & colors
