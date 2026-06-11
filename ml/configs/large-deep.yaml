@@ -33,6 +33,8 @@ train:
   lr: 0.00015
   weight_decay: 0.0001
   value_loss_weight: 1.0
+  # lambda 0.25 ablation (13:30-16:00 Thu) degraded clearly (gates 0.33);
+  # reverted to 0.5 and resumed from best.pt.
   lambda_mix: 0.5
 
 arena:

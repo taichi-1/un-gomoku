@@ -20,6 +20,7 @@ from ungomoku_ml.rules import (
     MAX_CANDIDATES,
     other_player,
 )
+from ungomoku_ml.rules.solver import forcing_win_cells
 from ungomoku_ml.rules.tactics import winning_cells
 from ungomoku_ml.rules.win import check_win_at, is_board_full
 
@@ -78,6 +79,7 @@ def expand(
     value: float,
     max_children: int,
     force_tactics: bool = True,
+    root_solver_depth: int = 0,
 ) -> None:
     """Attaches net output to an unexpanded, non-terminal node.
 
@@ -86,6 +88,11 @@ def expand(
     policy priors, and recorded in ``node.forced`` so selection visits them
     first. Without this, a rush-biased policy never proposes cells on the
     opponent's line and defense is discovered extremely slowly.
+
+    ``root_solver_depth`` >= 1 additionally runs the forced-sequence solver
+    for both players (depth 1 covers double threats; deeper finds forcing
+    chains ending in one) and forces the initiating cells. Root-only: it
+    costs a board scan plus a bounded recursion.
     """
     mask = legal_mask(node.board)
     legal = np.flatnonzero(mask)
@@ -94,14 +101,16 @@ def expand(
 
     forced_ids: np.ndarray | None = None
     if force_tactics:
-        forced_ids = np.unique(
-            np.concatenate(
-                [
-                    winning_cells(node.board, node.to_move),
-                    winning_cells(node.board, other_player(node.to_move)),
-                ]
+        parts = [
+            winning_cells(node.board, node.to_move),
+            winning_cells(node.board, other_player(node.to_move)),
+        ]
+        if root_solver_depth >= 1:
+            parts.append(forcing_win_cells(node.board, node.to_move, root_solver_depth))
+            parts.append(
+                forcing_win_cells(node.board, other_player(node.to_move), root_solver_depth)
             )
-        )[:max_children]
+        forced_ids = np.unique(np.concatenate(parts))[:max_children]
 
     legal_logits = logits[legal]
     if len(legal) > max_children:

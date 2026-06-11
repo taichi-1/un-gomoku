@@ -13,17 +13,16 @@
  * Gumbel degrades gracefully since current Q estimates are always usable.
  */
 
-import {
-  BOARD_SIZE,
-  MAX_CANDIDATES,
-  SUCCESS_PROBABILITY,
-  WIN_LENGTH,
-} from "@pkg/shared/constants";
+import { MAX_CANDIDATES, SUCCESS_PROBABILITY } from "@pkg/shared/constants";
 import { bestSubset, evCurve } from "./ev";
-import { encodeBoard } from "./features";
+import {
+  checkWinAtFlat,
+  forcingWinCellsFlat,
+  isBoardFullFlat,
+  winningCellsFlat,
+} from "./tactics";
 import {
   CELLS,
-  cellXY,
   EMPTY,
   type EngineMove,
   type Evaluate,
@@ -47,6 +46,8 @@ export interface SearchOptions {
   topCellDropout: number;
   /** Always include immediate win/block cells as children and root arms. */
   forceTactics: boolean;
+  /** Root forced-sequence solver depth (0 disables). */
+  solverDepth: number;
 }
 
 const PASS = -1;
@@ -54,61 +55,6 @@ const DEFAULT_KSTAR = 3;
 
 function successProbability(k: number): number {
   return SUCCESS_PROBABILITY[k] ?? 0.5;
-}
-
-/** Win check on a flat board; mirrors packages/core/win-detection.ts. */
-export function checkWinAtFlat(
-  board: Int8Array,
-  cell: number,
-  stone: number,
-): boolean {
-  const { x, y } = cellXY(cell);
-  const directions: [number, number][] = [
-    [1, 0],
-    [0, 1],
-    [1, 1],
-    [1, -1],
-  ];
-  for (const [dx, dy] of directions) {
-    let count = 1;
-    for (let i = 1; i < WIN_LENGTH; i++) {
-      const cx = x + dx * i;
-      const cy = y + dy * i;
-      if (
-        cx < 0 ||
-        cx >= BOARD_SIZE ||
-        cy < 0 ||
-        cy >= BOARD_SIZE ||
-        board[cy * BOARD_SIZE + cx] !== stone
-      ) {
-        break;
-      }
-      count++;
-    }
-    for (let i = 1; i < WIN_LENGTH; i++) {
-      const cx = x - dx * i;
-      const cy = y - dy * i;
-      if (
-        cx < 0 ||
-        cx >= BOARD_SIZE ||
-        cy < 0 ||
-        cy >= BOARD_SIZE ||
-        board[cy * BOARD_SIZE + cx] !== stone
-      ) {
-        break;
-      }
-      count++;
-    }
-    if (count >= WIN_LENGTH) return true;
-  }
-  return false;
-}
-
-function isBoardFullFlat(board: Int8Array): boolean {
-  for (let i = 0; i < CELLS; i++) {
-    if (board[i] === EMPTY) return false;
-  }
-  return true;
 }
 
 class Node {
@@ -144,24 +90,13 @@ class Node {
   }
 }
 
-/** Empty cells where placing `stone` wins immediately. */
-export function winningCellsFlat(board: Int8Array, stone: number): number[] {
-  const wins: number[] = [];
-  for (let i = 0; i < CELLS; i++) {
-    if (board[i] !== EMPTY) continue;
-    board[i] = stone;
-    if (checkWinAtFlat(board, i, stone)) wins.push(i);
-    board[i] = EMPTY;
-  }
-  return wins;
-}
-
 function expand(
   node: Node,
   logits: Float32Array,
   value: number,
   maxChildren: number,
   forceTactics: boolean,
+  rootSolverDepth = 0,
 ): void {
   const legal: number[] = [];
   for (let i = 0; i < CELLS; i++) {
@@ -175,6 +110,23 @@ function expand(
       ...winningCellsFlat(node.board, node.toMove),
       ...winningCellsFlat(node.board, otherStone(node.toMove)),
     ]);
+    if (rootSolverDepth >= 1) {
+      // Forced-sequence initiators for both sides (root-only board scan).
+      for (const cell of forcingWinCellsFlat(
+        node.board,
+        node.toMove,
+        rootSolverDepth,
+      )) {
+        forcedIds.add(cell);
+      }
+      for (const cell of forcingWinCellsFlat(
+        node.board,
+        otherStone(node.toMove),
+        rootSolverDepth,
+      )) {
+        forcedIds.add(cell);
+      }
+    }
     const missing = [...forcedIds].filter((cell) => !cells.includes(cell));
     if (missing.length > 0) {
       const keep = Math.max(0, maxChildren - missing.length);
@@ -357,7 +309,10 @@ async function settle(
   );
   if (needEval.length > 0) {
     const { logits, values } = await evaluate(
-      needEval.map((sim) => encodeBoard(sim.leaf.board, sim.leaf.toMove)),
+      needEval.map((sim) => ({
+        board: sim.leaf.board,
+        toMove: sim.leaf.toMove,
+      })),
     );
     counter.evals += needEval.length;
     needEval.forEach((sim, row) => {
@@ -392,7 +347,7 @@ export async function runSearch(
   const root = new Node(board.slice(), toMove);
   {
     const { logits, values } = await evaluate([
-      encodeBoard(root.board, root.toMove),
+      { board: root.board, toMove: root.toMove },
     ]);
     counter.evals += 1;
     expand(
@@ -401,6 +356,7 @@ export async function runSearch(
       values[0] as number,
       options.maxChildren,
       options.forceTactics,
+      options.forceTactics ? options.solverDepth : 0,
     );
   }
 

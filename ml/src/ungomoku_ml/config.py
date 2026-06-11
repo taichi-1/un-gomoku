@@ -16,6 +16,12 @@ class _StrictModel(BaseModel):
 class NetConfig(_StrictModel):
     blocks: int = Field(default=6, ge=1)
     channels: int = Field(default=64, ge=4)
+    # Input feature planes: 3 = stones + ones; 5 adds immediate win/block
+    # cell masks (KataGo-style tactical features).
+    in_planes: int = Field(default=3, ge=3, le=5)
+    # KataGo-style auxiliary head predicting final cell ownership
+    # (mover / opponent / empty at game end). Trains the trunk; not exported.
+    aux_ownership: bool = False
 
 
 class SearchConfig(_StrictModel):
@@ -32,6 +38,9 @@ class SearchConfig(_StrictModel):
     root_noise: bool = True
     # Always include immediate win/block cells as children and root arms.
     force_tactics: bool = True
+    # Root-only forced-sequence solver depth (forcing moves to look ahead;
+    # 0 disables). Initiating cells for both players join the forced arms.
+    solver_depth: int = Field(default=3, ge=0, le=5)
 
 
 class SelfplayConfig(_StrictModel):
@@ -54,6 +63,8 @@ class TrainStepConfig(_StrictModel):
     # Value target = (1 - lambda_mix) * game outcome + lambda_mix * root search value.
     # The heavy transition stochasticity makes pure outcomes very noisy.
     lambda_mix: float = Field(default=0.5, ge=0.0, le=1.0)
+    # Weight of the auxiliary ownership loss (active when net.aux_ownership).
+    ownership_weight: float = Field(default=0.15, ge=0.0)
 
 
 class ArenaConfig(_StrictModel):

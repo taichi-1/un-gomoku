@@ -57,8 +57,18 @@ export interface EngineMove {
   thinkMs: number;
 }
 
-/** Batched network evaluation, injected so tests never need ORT. */
-export type Evaluate = (planes: Float32Array[]) => Promise<{
+/** One position awaiting evaluation. */
+export interface EvalRequest {
+  board: Int8Array;
+  toMove: number;
+}
+
+/**
+ * Batched network evaluation, injected so tests never need ORT. The
+ * evaluator encodes boards itself (it alone knows the model's feature-plane
+ * count).
+ */
+export type Evaluate = (requests: EvalRequest[]) => Promise<{
   /** One Float32Array(225) of policy logits per input. */
   logits: Float32Array[];
   /** One value in [-1, 1] per input. */

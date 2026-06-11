@@ -52,3 +52,75 @@ def winning_cells_mask(board: np.ndarray, player: int) -> np.ndarray:
 def winning_cells(board: np.ndarray, player: int) -> np.ndarray:
     """Flat indices (y * 15 + x) of immediate winning cells for ``player``."""
     return np.flatnonzero(winning_cells_mask(board, player).reshape(-1))
+
+
+def _five_windows(board: np.ndarray, player: int):
+    """Yields (cells, p_count, empty_cells) for every 5-in-a-row window.
+
+    cells are flat indices; iteration is vectorized per direction with the
+    per-window detail loop only over qualifying windows.
+    """
+    own = (board == player).astype(np.int8)
+    empty = (board == EMPTY).astype(np.int8)
+    size = board.shape[0]
+    flat_index = np.arange(size * size).reshape(size, size)
+    for dx, dy in _DIRECTIONS:
+        # Window start ranges keeping all 5 cells in bounds.
+        x0 = slice(0, size - 4 * dx) if dx > 0 else slice(0, size)
+        if dy > 0:
+            y0 = slice(0, size - 4 * dy)
+        elif dy < 0:
+            y0 = slice(4, size)
+        else:
+            y0 = slice(0, size)
+        own_sum = np.zeros_like(own[y0, x0], dtype=np.int8)
+        empty_sum = np.zeros_like(own_sum)
+        for step in range(WIN_LENGTH):
+            sy = slice(y0.start + dy * step, (y0.stop or size) + dy * step)
+            sx = slice(x0.start + dx * step, (x0.stop or size) + dx * step)
+            own_sum = own_sum + own[sy, sx]
+            empty_sum = empty_sum + empty[sy, sx]
+        starts_y, starts_x = np.nonzero((own_sum == WIN_LENGTH - 2) & (empty_sum == 2))
+        for wy, wx in zip(starts_y, starts_x, strict=True):
+            y = int(wy) + (y0.start or 0)
+            x = int(wx) + (x0.start or 0)
+            empties = []
+            for step in range(WIN_LENGTH):
+                cy, cx = y + dy * step, x + dx * step
+                if board[cy, cx] == EMPTY:
+                    empties.append(int(flat_index[cy, cx]))
+            yield empties
+
+
+def double_threat_cells(board: np.ndarray, player: int) -> np.ndarray:
+    """Empty cells where placing ``player``'s stone yields >= 2 winning cells.
+
+    A cell with two simultaneous winning threats is (probabilistically) almost
+    unstoppable next turn — the core winning pattern of the racing meta.
+    Windows with exactly 3 own stones + 2 empties contribute a threat pair:
+    placing at one empty makes the other a winning cell.
+    """
+    existing = winning_cells(board, player)
+    threats: dict[int, set[int]] = {}
+    for pair in _five_windows(board, player):
+        if len(pair) != 2:
+            continue
+        a, b = pair
+        threats.setdefault(a, set()).add(b)
+        threats.setdefault(b, set()).add(a)
+
+    existing_set = {int(c) for c in existing}
+    out = []
+    for cell, raw_threats in threats.items():
+        # Winning cells after placing at `cell` = new threats from windows
+        # through it, united with pre-existing winning cells (minus itself).
+        # The move must CREATE at least one new threat: with >= 2 pre-existing
+        # winning cells every placement trivially "has two threats", but those
+        # positions are handled by the forced win-cell logic.
+        new_threats = raw_threats - existing_set
+        if not new_threats:
+            continue
+        winning_after = new_threats | (existing_set - {cell})
+        if len(winning_after) >= 2:
+            out.append(cell)
+    return np.array(sorted(out), dtype=np.int64)

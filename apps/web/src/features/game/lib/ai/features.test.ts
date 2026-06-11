@@ -22,6 +22,7 @@ interface EncodingCase {
   name: string;
   board: string;
   toMove: "player1" | "player2";
+  inPlanes: number;
   planes: number[];
 }
 
@@ -40,10 +41,11 @@ describe("encodeBoard", () => {
       cases: EncodingCase[];
     };
     expect(data.cases.length).toBeGreaterThan(0);
+    expect(data.cases.some((c) => c.inPlanes === 5)).toBe(true);
     for (const testCase of data.cases) {
       const board = boardFromString(testCase.board);
       const toMove = testCase.toMove === "player1" ? 1 : 2;
-      const planes = encodeBoard(board, toMove);
+      const planes = encodeBoard(board, toMove, testCase.inPlanes);
       expect(planes.length).toBe(testCase.planes.length);
       for (let i = 0; i < planes.length; i++) {
         if (planes[i] !== testCase.planes[i]) {

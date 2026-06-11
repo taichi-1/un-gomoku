@@ -4,7 +4,7 @@
  */
 
 import { computeEngineMove } from "./difficulty";
-import { INPUT_SIZE } from "./features";
+import { encodeBoard, PLANES_V1 } from "./features";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 import type { Evaluate } from "./types";
 
@@ -12,6 +12,8 @@ type Ort = typeof import("onnxruntime-web");
 
 let ortModule: Ort | null = null;
 let session: import("onnxruntime-web").InferenceSession | null = null;
+/** Feature-plane count, read from the loaded model's input shape. */
+let inPlanes = PLANES_V1;
 
 function post(message: WorkerResponse): void {
   self.postMessage(message);
@@ -31,16 +33,30 @@ async function init(wasmPathPrefix: string, modelUrl: string): Promise<void> {
   session = await ort.InferenceSession.create(modelUrl, {
     executionProviders: ["wasm"],
   });
+  const inputMeta = session.inputMetadata[0];
+  const channels =
+    inputMeta && "shape" in inputMeta ? inputMeta.shape[1] : undefined;
+  inPlanes =
+    typeof channels === "number" && channels > 0 ? channels : PLANES_V1;
 }
 
-const evaluate: Evaluate = async (planes) => {
+const evaluate: Evaluate = async (requests) => {
   if (!session || !ortModule) throw new Error("engine not initialized");
-  const batch = planes.length;
-  const input = new Float32Array(batch * INPUT_SIZE);
-  planes.forEach((p, i) => {
-    input.set(p, i * INPUT_SIZE);
+  const batch = requests.length;
+  const inputSize = inPlanes * 225;
+  const input = new Float32Array(batch * inputSize);
+  requests.forEach((request, i) => {
+    input.set(
+      encodeBoard(request.board, request.toMove, inPlanes),
+      i * inputSize,
+    );
   });
-  const tensor = new ortModule.Tensor("float32", input, [batch, 3, 15, 15]);
+  const tensor = new ortModule.Tensor("float32", input, [
+    batch,
+    inPlanes,
+    15,
+    15,
+  ]);
   const inputName = session.inputNames[0] ?? "board";
   const outputs = await session.run({ [inputName]: tensor });
   const logitsOut = outputs[session.outputNames[0] ?? "policy_logits"];

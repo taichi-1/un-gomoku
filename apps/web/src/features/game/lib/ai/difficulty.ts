@@ -5,7 +5,7 @@
 
 import { MAX_CANDIDATES } from "@pkg/shared/constants";
 import { bestSubset } from "./ev";
-import { encodeBoard, legalCells } from "./features";
+import { legalCells } from "./features";
 import type { SearchOptions } from "./search";
 import { runSearch } from "./search";
 import {
@@ -39,6 +39,7 @@ export const DIFFICULTY_CONFIGS: Record<CpuDifficulty, DifficultyConfig> = {
       qNoise: 0,
       topCellDropout: 0,
       forceTactics: true,
+      solverDepth: 3,
     },
     policyTemperature: 1,
     policyTopDropout: 0,
@@ -56,6 +57,7 @@ export const DIFFICULTY_CONFIGS: Record<CpuDifficulty, DifficultyConfig> = {
       qNoise: 0.15,
       topCellDropout: 0.05,
       forceTactics: true,
+      solverDepth: 2,
     },
     policyTemperature: 1,
     policyTopDropout: 0,
@@ -73,6 +75,7 @@ export const DIFFICULTY_CONFIGS: Record<CpuDifficulty, DifficultyConfig> = {
       qNoise: 0,
       topCellDropout: 0,
       forceTactics: false,
+      solverDepth: 0,
     },
     policyTemperature: 1.6,
     policyTopDropout: 0.25,
@@ -95,7 +98,7 @@ async function policyOnlyMove(
   rng: RandomFn,
 ): Promise<EngineMove> {
   const started = performance.now();
-  const { logits, values } = await evaluate([encodeBoard(board, toMove)]);
+  const { logits, values } = await evaluate([{ board, toMove }]);
   const policy = logits[0] as Float32Array;
   const legal = legalCells(board);
 

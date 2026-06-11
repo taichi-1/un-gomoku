@@ -27,6 +27,7 @@ class FinishedGame:
     winner: int  # 0 = draw or turn-cap
     turns: int
     history: list[PositionRecord] | None
+    final_board: np.ndarray | None = None
 
 
 @dataclass
@@ -133,6 +134,7 @@ def run_games(
                 winner=slot.winner,
                 turns=slot.turns,
                 history=slot.history,
+                final_board=slot.board.copy() if collect_history else None,
             )
             results.append(finished)
             if on_game_done is not None:

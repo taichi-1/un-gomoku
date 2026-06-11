@@ -1,0 +1,47 @@
+# Run 7: the winning recipe (6x64, v2 planes, double-threat search) plus a
+# KataGo-style auxiliary ownership head (predict final cell ownership) as a
+# trunk regularizer targeting the value-net bottleneck.
+run_name: ownership
+seed: 8888
+generations: 300
+
+net:
+  blocks: 6
+  channels: 64
+  in_planes: 5
+  aux_ownership: true
+
+search:
+  max_children: 32
+  m_root_cells: 16
+  simulations: 64
+  pass_simulations: 4
+  c_puct: 1.5
+  c_visit: 50.0
+  c_scale: 1.0
+  root_noise: true
+
+selfplay:
+  parallel_games: 256
+  games_per_generation: 1000
+  max_turns: 600
+
+replay:
+  capacity: 400000
+  min_fill: 15000
+
+train:
+  batch_size: 512
+  steps_per_generation: 1000
+  lr: 0.0002
+  weight_decay: 0.0001
+  value_loss_weight: 1.0
+  lambda_mix: 0.5
+  ownership_weight: 0.08
+
+arena:
+  every_generations: 1
+  games: 300
+  promote_threshold: 0.55
+  simulations: 32
+  parallel_games: 64
