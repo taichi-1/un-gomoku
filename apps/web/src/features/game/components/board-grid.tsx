@@ -47,6 +47,7 @@ interface BoardGridProps {
   canInteract: boolean;
   setCandidateSelection: (coord: Coordinate, shouldSelect: boolean) => void;
   hideStoneKey: string | null;
+  winningLineKeys: ReadonlySet<string> | null;
 }
 
 export const BoardGrid = memo(function BoardGrid({
@@ -54,6 +55,7 @@ export const BoardGrid = memo(function BoardGrid({
   canInteract,
   setCandidateSelection,
   hideStoneKey,
+  winningLineKeys,
 }: BoardGridProps) {
   const coordinates = useMemo(() => listCoordinates(), []);
   const selectedRankMap = useMemo(
@@ -133,6 +135,7 @@ export const BoardGrid = memo(function BoardGrid({
                 : null;
         const hasCandidateStone = candidateStone !== null;
         const isStarPoint = STAR_POINTS.has(`${coord.x},${coord.y}`);
+        const isWinningCell = winningLineKeys?.has(key) ?? false;
 
         return (
           <button
@@ -175,6 +178,9 @@ export const BoardGrid = memo(function BoardGrid({
             ) : null}
             {isStarPoint && visibleCellState === null && !hasCandidateStone ? (
               <div className="pointer-events-none absolute size-[18%] rounded-full bg-[rgba(24,16,10,0.58)]" />
+            ) : null}
+            {isWinningCell ? (
+              <div className="pointer-events-none absolute inset-[4%] rounded-full border-2 border-[rgba(235,206,157,0.92)] shadow-[0_0_10px_2px_rgba(208,161,90,0.55)]" />
             ) : null}
             {visibleCellState ? (
               <StoneIcon

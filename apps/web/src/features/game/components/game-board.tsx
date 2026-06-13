@@ -6,6 +6,7 @@ import type {
   ActiveTurnResolutionFx,
   TurnResolutionFxPhase,
 } from "@/features/game/lib/turn-resolution-fx-controller";
+import { findWinningLine } from "@/features/game/lib/winning-line";
 import type { GameController } from "@/features/game/types/game-session";
 
 interface GameBoardProps {
@@ -13,6 +14,7 @@ interface GameBoardProps {
   activeFx: ActiveTurnResolutionFx | null;
   phase: TurnResolutionFxPhase;
   onPhaseComplete: (phase: Exclude<TurnResolutionFxPhase, "idle">) => void;
+  showFinishedResult: boolean;
 }
 
 export function GameBoard({
@@ -20,6 +22,7 @@ export function GameBoard({
   activeFx,
   phase,
   onPhaseComplete,
+  showFinishedResult,
 }: GameBoardProps) {
   const { snapshot, canInteract, setCandidateSelection } = controller;
 
@@ -35,6 +38,19 @@ export function GameBoard({
     return coordinateKey(activeFx.result.placedPosition);
   }, [activeFx, phase]);
 
+  const winningLineKeys = useMemo(() => {
+    if (!showFinishedResult) {
+      return null;
+    }
+    const { board, winner, turnHistory } = snapshot.gameState;
+    const lastTurn = turnHistory.at(-1);
+    if (!winner || !lastTurn?.placedPosition || lastTurn.player !== winner) {
+      return null;
+    }
+    const line = findWinningLine(board, lastTurn.placedPosition, winner);
+    return line ? new Set(line.map(coordinateKey)) : null;
+  }, [showFinishedResult, snapshot.gameState]);
+
   return (
     <div className="flex w-full items-center justify-center">
       <div className="relative">
@@ -43,6 +59,7 @@ export function GameBoard({
           canInteract={canInteract}
           setCandidateSelection={setCandidateSelection}
           hideStoneKey={hideStoneKey}
+          winningLineKeys={winningLineKeys}
         />
         <TurnResolutionOverlay
           activeFx={activeFx}

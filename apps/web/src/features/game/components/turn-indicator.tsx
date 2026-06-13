@@ -28,7 +28,6 @@ export function resolveTurnIndicatorDisplay({
   indicatorStonePlayer: PlayerId | null;
 } {
   const { gameState } = snapshot;
-  const winner = gameState.winner;
   const isFinished = gameState.phase === "finished" && showFinishedResult;
 
   if (snapshot.mode === "online") {
@@ -69,24 +68,18 @@ export function resolveTurnIndicatorDisplay({
   }
 
   if (isFinished) {
-    if (!winner || gameState.isDraw) {
-      return {
-        label: t("game.finishedDrawIndicator"),
-        indicatorStonePlayer: null,
-      };
-    }
     return {
-      label: t("game.finishedWinnerIndicator", {
-        player: t(`common.player.${winner}`),
-      }),
-      indicatorStonePlayer: winner,
+      label: t("common.gameFinished"),
+      indicatorStonePlayer: null,
     };
   }
 
   if (snapshot.mode === "local") {
+    const stoneKey =
+      displayPlayerId === gameState.blackPlayer ? "black" : "white";
     return {
       label: t("common.playerTurn", {
-        player: t(`common.player.${displayPlayerId}`),
+        player: t(`common.stone.${stoneKey}`),
       }),
       indicatorStonePlayer: displayPlayerId,
     };
