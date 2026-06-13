@@ -117,6 +117,7 @@ export function GamePage({ controller }: GamePageProps) {
               activeFx={activeFx}
               phase={phase}
               onPhaseComplete={onPhaseComplete}
+              showFinishedResult={showFinishedResult}
             />
           </div>
           <div style={{ width: "var(--board-size)" }}>

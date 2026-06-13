@@ -83,7 +83,7 @@ describe("resolveTurnIndicatorDisplay", () => {
     });
   });
 
-  test("keeps local turn label behavior", () => {
+  test("labels the local turn with the stone color", () => {
     const snapshot: GameSessionSnapshot = {
       ...createBaseOnlineSnapshot(),
       mode: "local",
@@ -100,8 +100,58 @@ describe("resolveTurnIndicatorDisplay", () => {
     });
 
     expect(result).toEqual({
-      label: "common.playerTurn:common.player.player2",
+      label: "common.playerTurn:common.stone.white",
       indicatorStonePlayer: "player2",
+    });
+  });
+
+  test("maps the stone color from blackPlayer, not the player id", () => {
+    const snapshot: GameSessionSnapshot = {
+      ...createBaseOnlineSnapshot(),
+      mode: "local",
+      status: "connected",
+      statusMessage: null,
+    };
+    snapshot.gameState = { ...snapshot.gameState, blackPlayer: "player2" };
+
+    const result = resolveTurnIndicatorDisplay({
+      snapshot,
+      showFinishedResult: false,
+      displayPlayerId: "player2",
+      hasActiveFx: false,
+      t: createTranslate(),
+    });
+
+    expect(result).toEqual({
+      label: "common.playerTurn:common.stone.black",
+      indicatorStonePlayer: "player2",
+    });
+  });
+
+  test("shows a plain finished label once the result is revealed", () => {
+    const snapshot: GameSessionSnapshot = {
+      ...createBaseOnlineSnapshot(),
+      mode: "local",
+      status: "connected",
+      statusMessage: null,
+    };
+    snapshot.gameState = {
+      ...snapshot.gameState,
+      phase: "finished",
+      winner: "player1",
+    };
+
+    const result = resolveTurnIndicatorDisplay({
+      snapshot,
+      showFinishedResult: true,
+      displayPlayerId: "player1",
+      hasActiveFx: false,
+      t: createTranslate(),
+    });
+
+    expect(result).toEqual({
+      label: "common.gameFinished",
+      indicatorStonePlayer: null,
     });
   });
 });

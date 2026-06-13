@@ -12,6 +12,7 @@ import { useLocalGameSession } from "@/features/game/hooks/use-local-game-sessio
 import { useOnlineGameSession } from "@/features/game/hooks/use-online-game-session";
 import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/ai";
 import { TitlePage } from "@/features/title/components/title-page";
+import { TutorialPage } from "@/features/tutorial/components/tutorial-page";
 
 function RootLayout() {
   return (
@@ -83,11 +84,18 @@ const onlineRoute = createRoute({
   component: OnlineGameRouteComponent,
 });
 
+const tutorialRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tutorial",
+  component: TutorialPage,
+});
+
 const routeTree = rootRoute.addChildren([
   titleRoute,
   localRoute,
   cpuRoute,
   onlineRoute,
+  tutorialRoute,
 ]);
 
 export const router = createRouter({

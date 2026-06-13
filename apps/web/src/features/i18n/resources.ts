@@ -13,10 +13,6 @@ export const resources = {
         playerTurn: "{{player}}のターン",
         gameFinished: "対局終了",
         draw: "引き分け",
-        player: {
-          player1: "黒",
-          player2: "白",
-        },
         stone: {
           black: "黒",
           white: "白",
@@ -69,9 +65,6 @@ export const resources = {
         inviteButton: "招待する",
         invalidRoomId: "ルームIDは6桁英数字です",
         roomInvite: "招待",
-        winner: "{{player}}の勝ち",
-        finishedWinnerIndicator: "ゲーム終了: 勝者 {{player}}",
-        finishedDrawIndicator: "ゲーム終了: 引き分け",
         cpuThinking: "CPUが考え中…",
         cpuDifficultyDisplay: {
           easy: "よわい",
@@ -79,19 +72,31 @@ export const resources = {
           hard: "つよい",
         },
         rematch: "もう一局",
-        luckFeedback: {
-          result: "勝敗",
-          expectedDelta: "期待値差",
-          successCount: "成功回数",
-          win: "勝ち",
-          lose: "負け",
-          draw: "引き分け",
-          label: {
-            veryLucky: "かなりツイてる",
+        result: {
+          headline: {
+            win: "あなたの勝ち！",
+            lose: "あなたの負け…",
+            draw: "引き分け",
+            stoneWin: "{{player}}の勝ち！",
+          },
+          you: "あなた",
+          opponent: {
+            cpu: "CPU",
+            online: "相手",
+          },
+          fortuneTitle: "この一局の運勢",
+          fortuneCaption: {
+            veryLucky: "ツキまくり",
             lucky: "ややツイてる",
-            expected: "期待値どおり",
-            unlucky: "やや不運",
-            veryUnlucky: "かなり不運",
+            expected: "運は五分",
+            unlucky: "ツキ薄め",
+            veryUnlucky: "運に見放され",
+          },
+          details: {
+            toggle: "くわしい数字",
+            success: "成功回数",
+            expected: "期待成功",
+            delta: "運の差",
           },
         },
       },
@@ -107,6 +112,58 @@ export const resources = {
         rule2: "選択数に応じて成功率が変わる（1個=50% 〜 5個=90%）",
         rule3: "5個並べると勝ち（縦・横・斜め）",
         rule4: "配置に失敗するとターンが交代する",
+      },
+      tutorial: {
+        entry: {
+          title: "あそびかた",
+          description: "1分でルールがわかる体験チュートリアル",
+          start: "はじめる",
+        },
+        intro: {
+          title: "5つ並べたら勝ち！",
+          body: "タテ・ヨコ・ナナメ、どの向きでもOK。",
+          directionRow: "ヨコ",
+          directionColumn: "タテ",
+          directionDiagonal: "ナナメ",
+          start: "はじめる（約1分）",
+          skip: "スキップ",
+        },
+        coach: {
+          step1Select:
+            "ナナメに4つ並んでいます。あと1つで勝ち！光っているマスをタップ。",
+          step1Submit:
+            "「決定」で石を置きます。ただし1マスだけだと成功率50%…！",
+          step1Fail:
+            "置けなかった…！これが「運」。失敗すると石は置けず、相手の番になります。",
+          white1: "CPUの番。あなたの勝ちマスを狙ってきた…！",
+          step2Select:
+            "セーフ！今度は候補を5マスに増やそう（成功率90%）。光っているマスも忘れずに。",
+          step2Ready: "成功率90%！「決定」！",
+          step2Success:
+            "置けた！ただし場所は候補の中からランダム。狙った所に置けるとは限りません。",
+          white2: "CPUの番。じっと見守ろう…",
+          step3Select:
+            "CPUも失敗！運はお互い様。仕上げです——勝ちマスを含めて、好きな数の候補で勝負！",
+          step3Ready: "いざ、「決定」！",
+          resolving: "運命の抽選中…",
+          done: "5つ並んだ！勝利！",
+          next: "つぎへ",
+          skip: "スキップ",
+        },
+        hint: {
+          needFive: "候補を5マスまで増やしてみよう。",
+          needWinCell:
+            "光っているマスも候補に入れよう（選択済みのマスはタップで外せます）。",
+          winCellOnly: "このステップでは、光っているマスだけ選べます。",
+        },
+        complete: {
+          title: "勝利！これで遊びかたはバッチリ",
+          recap1: "5つ並べたら勝ち（タテ・ヨコ・ナナメ）",
+          recap2: "毎ターン候補を1〜5マス選ぶ。多いほど成功率UP（50%→90%）",
+          recap3: "石は候補の中からランダムな1マスへ。失敗したら相手の番",
+          playCpu: "CPUと対戦してみる",
+          backToTitle: "タイトルへ",
+        },
       },
       header: {
         toggleSfxMute: "効果音をミュート",
@@ -143,10 +200,6 @@ export const resources = {
         playerTurn: "{{player}}'s turn",
         gameFinished: "Game finished",
         draw: "Draw",
-        player: {
-          player1: "Black",
-          player2: "White",
-        },
         stone: {
           black: "Black",
           white: "White",
@@ -199,9 +252,6 @@ export const resources = {
         inviteButton: "Invite",
         invalidRoomId: "Room ID must be 6 uppercase letters or digits",
         roomInvite: "Invite",
-        winner: "{{player}} wins",
-        finishedWinnerIndicator: "Game over: Winner {{player}}",
-        finishedDrawIndicator: "Game over: Draw",
         cpuThinking: "CPU is thinking...",
         cpuDifficultyDisplay: {
           easy: "Easy",
@@ -209,19 +259,31 @@ export const resources = {
           hard: "Hard",
         },
         rematch: "Rematch",
-        luckFeedback: {
-          result: "Result",
-          expectedDelta: "Luck delta",
-          successCount: "Successes",
-          win: "Win",
-          lose: "Lose",
-          draw: "Draw",
-          label: {
-            veryLucky: "Very lucky",
-            lucky: "Lucky",
-            expected: "As expected",
-            unlucky: "Unlucky",
-            veryUnlucky: "Very unlucky",
+        result: {
+          headline: {
+            win: "You win!",
+            lose: "You lose...",
+            draw: "Draw",
+            stoneWin: "{{player}} wins!",
+          },
+          you: "You",
+          opponent: {
+            cpu: "CPU",
+            online: "Opponent",
+          },
+          fortuneTitle: "Fortune of the match",
+          fortuneCaption: {
+            veryLucky: "Blessed by luck",
+            lucky: "A bit lucky",
+            expected: "Dead even",
+            unlucky: "A bit unlucky",
+            veryUnlucky: "Forsaken by luck",
+          },
+          details: {
+            toggle: "Show the numbers",
+            success: "Successes",
+            expected: "Expected",
+            delta: "Luck delta",
           },
         },
       },
@@ -237,6 +299,59 @@ export const resources = {
         rule2: "Success rate varies by count (1=50% to 5=90%)",
         rule3: "5 in a row wins (horizontal, vertical, diagonal)",
         rule4: "Failed placement switches the turn",
+      },
+      tutorial: {
+        entry: {
+          title: "How to play",
+          description: "A hands-on tutorial — learn the rules in 1 minute",
+          start: "Start",
+        },
+        intro: {
+          title: "Five in a row wins!",
+          body: "Rows, columns, diagonals — they all count.",
+          directionRow: "Row",
+          directionColumn: "Column",
+          directionDiagonal: "Diagonal",
+          start: "Start (about 1 min)",
+          skip: "Skip",
+        },
+        coach: {
+          step1Select:
+            "You have four in a diagonal — one more wins! Tap the glowing cell.",
+          step1Submit:
+            "Press Submit to place it. But with one cell, the odds are 50%…!",
+          step1Fail:
+            "It missed…! That's the luck twist: a failed roll places nothing and passes the turn.",
+          white1: "The CPU's turn — it's aiming at your winning cell…!",
+          step2Select:
+            "Safe! Now pick 5 candidates (90% odds). Don't forget the glowing cell.",
+          step2Ready: "90% odds — Submit!",
+          step2Success:
+            "Placed! But the spot is drawn at random from your candidates — not always where you aimed.",
+          white2: "The CPU's turn. Watch closely…",
+          step3Select:
+            "The CPU missed too — luck cuts both ways. Now finish it: include the winning cell, pick as many as you like!",
+          step3Ready: "Submit and win!",
+          resolving: "Rolling the dice…",
+          done: "Five in a row — victory!",
+          next: "Next",
+          skip: "Skip",
+        },
+        hint: {
+          needFive: "Add candidates until you have 5.",
+          needWinCell:
+            "Include the glowing cell (tap a selected cell to remove it).",
+          winCellOnly: "In this step, only the glowing cell can be picked.",
+        },
+        complete: {
+          title: "Victory! You're ready to play",
+          recap1: "Five in a row wins (any direction)",
+          recap2: "Pick 1–5 candidate cells — more means better odds (50%→90%)",
+          recap3:
+            "The stone lands on a random candidate; a miss passes the turn",
+          playCpu: "Try a CPU match",
+          backToTitle: "Back to title",
+        },
       },
       header: {
         toggleSfxMute: "Mute sound effects",

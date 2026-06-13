@@ -23,6 +23,7 @@ import {
 import type { CpuDifficulty, CpuTurnOrder } from "@/features/game/lib/ai";
 import { preloadAllGameSounds } from "@/features/game/sound/game-sound-player";
 import { type CreatedRoom, createRoom } from "@/features/title/lib/create-room";
+import { hasSeenTutorial } from "@/features/tutorial/lib/tutorial-progress";
 import { saveRoomAuth } from "@/lib/room-auth-storage";
 
 const ROOM_ID_PATTERN = /^[A-Z0-9]{6}$/;
@@ -55,6 +56,7 @@ export function TitlePage() {
   const [cpuDifficulty, setCpuDifficulty] = useState<CpuDifficulty>("medium");
   const [cpuTurnOrder, setCpuTurnOrder] = useState<CpuTurnOrder>("random");
   const [isCpuSettingsOpen, setIsCpuSettingsOpen] = useState(false);
+  const [showTutorialNudge] = useState(() => !hasSeenTutorial());
 
   useEffect(() => {
     preloadAllGameSounds();
@@ -121,6 +123,33 @@ export function TitlePage() {
               {t("title.subtitle")}
             </p>
           </section>
+
+          <Card>
+            <div className="flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <CardTitle>{t("tutorial.entry.title")}</CardTitle>
+                <CardDescription className="mt-1 text-[11px] sm:text-xs">
+                  {t("tutorial.entry.description")}
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                className="relative shrink-0"
+                onClick={() => {
+                  void navigate({ to: "/tutorial" });
+                }}
+              >
+                {t("tutorial.entry.start")}
+                {showTutorialNudge ? (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-1 animate-pulse rounded-lg border-2 border-(--accent-gold-1)"
+                  />
+                ) : null}
+              </Button>
+            </div>
+          </Card>
 
           <Card>
             <CardHeader>
