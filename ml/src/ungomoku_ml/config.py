@@ -75,6 +75,22 @@ class ArenaConfig(_StrictModel):
     parallel_games: int = Field(default=64, ge=1)
 
 
+class LeagueConfig(_StrictModel):
+    """Fictitious-self-play league: a fraction of self-play games are played
+    against frozen past-best checkpoints (a diverse pool) instead of the
+    current net. Counters self-play meta-collapse into a narrow racing
+    equilibrium by widening the opponent (and thus value-target) distribution.
+    Only the learner's own positions from league games enter the replay buffer.
+    """
+
+    enabled: bool = False
+    # Fraction of self-play games pitting the learner vs a frozen pool opponent.
+    fraction: float = Field(default=0.5, ge=0.0, le=1.0)
+    # Checkpoint paths (relative to the ml/ cwd) forming the opponent pool.
+    # Mixed architectures / plane counts are fine; each loads its own net_config.
+    pool: list[str] = Field(default_factory=list)
+
+
 class RunConfig(_StrictModel):
     run_name: str = "default"
     seed: int = 42
@@ -85,6 +101,7 @@ class RunConfig(_StrictModel):
     replay: ReplayConfig = ReplayConfig()
     train: TrainStepConfig = TrainStepConfig()
     arena: ArenaConfig = ArenaConfig()
+    league: LeagueConfig = LeagueConfig()
 
 
 def load_config(path: str | Path) -> RunConfig:
