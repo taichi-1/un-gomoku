@@ -10,14 +10,14 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from ungomoku_ml.agents import net_agent
+from ungomoku_ml.agents import AgentSpec, net_agent
 from ungomoku_ml.arena import play_match
 from ungomoku_ml.config import RunConfig, SearchConfig
 from ungomoku_ml.driver import run_games
 from ungomoku_ml.evaluator import NetEvaluator
 from ungomoku_ml.net import PolicyValueNet
 from ungomoku_ml.replay import ReplayBuffer
-from ungomoku_ml.rules import PLAYER1
+from ungomoku_ml.rules import PLAYER1, other_player
 
 
 @dataclass
@@ -45,14 +45,40 @@ def run_selfplay(
     max_turns: int,
     buffer: ReplayBuffer,
     seed: int,
+    league_opponents: list[AgentSpec] | None = None,
+    league_fraction: float = 0.0,
 ) -> SelfplayStats:
-    spec = net_agent("selfplay", evaluator, search_cfg)
+    learner = net_agent("selfplay", evaluator, search_cfg)
+    use_league = bool(league_opponents) and league_fraction > 0.0
+    n_pool = len(league_opponents) if league_opponents else 0
+    league_cut = int(round(league_fraction * 1000))
+
+    def league_for(index: int) -> tuple[bool, int, AgentSpec | None]:
+        """(is_league, learner_side, opponent_spec) for a game index.
+
+        Pure self-play games return (False, PLAYER1, None) and collect both
+        sides. League games designate one side the learner (alternating for
+        first/second balance) and cycle the opponent pool decorrelated from
+        the learner's side; only the learner's positions are kept."""
+        if not use_league or (index % 1000) >= league_cut:
+            return (False, PLAYER1, None)
+        learner_side = PLAYER1 if index % 2 == 0 else other_player(PLAYER1)
+        opp = league_opponents[(index // 2) % n_pool]  # type: ignore[index]
+        return (True, learner_side, opp)
+
+    def agent_for(index: int, player: int) -> AgentSpec:
+        is_lg, learner_side, opp = league_for(index)
+        if is_lg and player != learner_side:
+            assert opp is not None
+            return opp
+        return learner
+
     start = time.perf_counter()
     with tqdm(total=games, desc="selfplay", unit="game", leave=False) as progress:
         finished = run_games(
             n_games=games,
             parallel=parallel,
-            agent_for=lambda _index, _player: spec,
+            agent_for=agent_for,
             seed=seed,
             max_turns=max_turns,
             collect_history=True,
@@ -63,7 +89,11 @@ def run_selfplay(
     turns = 0
     for game in finished:
         assert game.history is not None
-        positions += buffer.add_game(game.history, game.winner, game.final_board)
+        is_lg, learner_side, _ = league_for(game.index)
+        history = (
+            [r for r in game.history if r.to_move == learner_side] if is_lg else game.history
+        )
+        positions += buffer.add_game(history, game.winner, game.final_board)
         turns += game.turns
         if game.winner == PLAYER1:
             p1 += 1
@@ -261,6 +291,26 @@ def train(cfg: RunConfig, resume: str | None = None, device_override: str | None
     evaluator = NetEvaluator(net, device, cfg.net.in_planes)
     best_evaluator = NetEvaluator(best_net, device, cfg.net.in_planes)
 
+    league_specs: list[AgentSpec] = []
+    if cfg.league.enabled and cfg.league.pool:
+        # Frozen opponents play strong, low-noise; they are fixed targets, not
+        # learners. Each loads its own net_config so mixed architectures / plane
+        # counts coexist (the driver batches per evaluator id).
+        opp_search = cfg.search.model_copy(update={"root_noise": False})
+        for pool_path in cfg.league.pool:
+            pp = Path(pool_path)
+            if not pp.exists():
+                print(f"league: skipping missing pool ckpt {pp}")
+                continue
+            opp_net, opp_ckpt = load_net(pp, device)
+            opp_planes = int(opp_ckpt["net_config"].get("in_planes", 3))
+            opp_eval = NetEvaluator(opp_net, device, opp_planes)
+            league_specs.append(net_agent(f"league:{pp.stem}", opp_eval, opp_search))
+        print(
+            f"league: {len(league_specs)} frozen opponents loaded "
+            f"(fraction={cfg.league.fraction})"
+        )
+
     print(f"training on {device}; run dir: {run_dir.resolve()}")
     for gen in range(start_gen, cfg.generations):
         gen_start = time.perf_counter()
@@ -273,6 +323,8 @@ def train(cfg: RunConfig, resume: str | None = None, device_override: str | None
             cfg.selfplay.max_turns,
             buffer,
             selfplay_seed,
+            league_opponents=league_specs or None,
+            league_fraction=cfg.league.fraction,
         )
         print(
             f"[gen {gen}] selfplay: {stats.games} games, {stats.positions} positions, "
