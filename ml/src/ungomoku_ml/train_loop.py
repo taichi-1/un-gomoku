@@ -90,9 +90,7 @@ def run_selfplay(
     for game in finished:
         assert game.history is not None
         is_lg, learner_side, _ = league_for(game.index)
-        history = (
-            [r for r in game.history if r.to_move == learner_side] if is_lg else game.history
-        )
+        history = [r for r in game.history if r.to_move == learner_side] if is_lg else game.history
         positions += buffer.add_game(history, game.winner, game.final_board)
         turns += game.turns
         if game.winner == PLAYER1:
@@ -307,8 +305,7 @@ def train(cfg: RunConfig, resume: str | None = None, device_override: str | None
             opp_eval = NetEvaluator(opp_net, device, opp_planes)
             league_specs.append(net_agent(f"league:{pp.stem}", opp_eval, opp_search))
         print(
-            f"league: {len(league_specs)} frozen opponents loaded "
-            f"(fraction={cfg.league.fraction})"
+            f"league: {len(league_specs)} frozen opponents loaded (fraction={cfg.league.fraction})"
         )
 
     print(f"training on {device}; run dir: {run_dir.resolve()}")

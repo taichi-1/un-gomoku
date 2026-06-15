@@ -1,6 +1,5 @@
 """Forced-sequence solver behavior on constructed positions."""
 
-
 from ungomoku_ml.rules import PLAYER1, PLAYER2, new_board
 from ungomoku_ml.rules.solver import forcing_win_cells
 
