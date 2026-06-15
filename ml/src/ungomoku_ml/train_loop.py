@@ -51,7 +51,7 @@ def run_selfplay(
     learner = net_agent("selfplay", evaluator, search_cfg)
     use_league = bool(league_opponents) and league_fraction > 0.0
     n_pool = len(league_opponents) if league_opponents else 0
-    league_cut = int(round(league_fraction * 1000))
+    league_cut = round(league_fraction * 1000)
 
     def league_for(index: int) -> tuple[bool, int, AgentSpec | None]:
         """(is_league, learner_side, opponent_spec) for a game index.
